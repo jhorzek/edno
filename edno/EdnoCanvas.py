@@ -56,6 +56,7 @@ class EdnoCanvas(tk.Canvas):
         root: ctk.CTk,
         form_names: dict[str, str] = {"rectangle": "rectangle", "ellipse": "ellipse"},
         font = ("Arial", 9),
+        node_color = "#cfcfcf",
         **kwargs,
     ) -> None:
         """
@@ -79,6 +80,7 @@ class EdnoCanvas(tk.Canvas):
         super().__init__(root, kwargs)
 
         self.form_names = form_names
+        self.node_color = node_color
 
         # initialize nodes
         self.nodes: list[Node] = []
@@ -263,7 +265,8 @@ class CanvasContextMenu:
                 y=self.canvas.context_menu.position[1],
                 type=self.form_names["ellipse"],
                 shape="ellipse",
-                font = self.canvas.font
+                font = self.canvas.font,
+                node_color = self.canvas.node_color
             )
         )
         self.canvas.context_menu = None
@@ -280,7 +283,8 @@ class CanvasContextMenu:
                 y=self.canvas.context_menu.position[1],
                 type=self.form_names["rectangle"],
                 shape="rectangle",
-                font=self.canvas.font
+                font=self.canvas.font,
+                node_color = self.canvas.node_color
             )
         )
         self.canvas.context_menu = None

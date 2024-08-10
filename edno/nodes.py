@@ -134,6 +134,7 @@ class Node(TextBox):
         shape: str,
         additional_information: None | dict[Any, Any] = None,
         font = ("Arial", 9),
+        node_color: str = "#cfcfcf",
     ) -> None:
         """
         Parameters
@@ -161,7 +162,7 @@ class Node(TextBox):
             y=y,
             text=label,
             box_shape=shape,
-            box_color="#cfcfcf",
+            box_color=node_color,
             space_around=10,
             font = self.font
         )
@@ -554,7 +555,7 @@ class NodeMenu(tk.Menu):
             node_position[1],
             node_position[0],
             node_position[1],
-            width=2
+            width=2, arrow=tk.LAST
         )
         self.canvas.tag_lower(self.canvas.temporary_arrow)
         self.canvas.drawing_arrow = True

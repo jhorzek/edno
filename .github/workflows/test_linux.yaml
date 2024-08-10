@@ -1,0 +1,40 @@
+name: Test Linux
+  
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install dependencies
+        run: |
+          # Because we are running in a GitHub action, we cannot display the app. Therefore,
+          # we have to first create a virtual display. See
+          # https://stackoverflow.com/questions/67760308/test-tkinter-tcl-gui-using-github-actions
+          sudo apt-get install -y xvfb 
+      
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Poetry
+        run: |
+          pip install poetry
+
+      - name: Install dependencies
+        run: |
+          poetry install
+      
+      - name: Run tests
+        run: |
+           poetry run python tests/test_edno.py

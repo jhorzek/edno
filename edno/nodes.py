@@ -5,9 +5,8 @@ from typing import Any, Callable
 from .arrow import Arrow
 from .text_box import TextBox, distance
 
-def allow_all_connections(predictors_node, 
-                          dependents_node, 
-                          all_nodes) -> bool:
+
+def allow_all_connections(predictors_node, dependents_node, all_nodes) -> bool:
     """
     Allow all connections between nodes. This function is a placeholder that can be replaced with more sophisticated rules that determine if a connection is allowed or not.
 
@@ -21,6 +20,8 @@ def allow_all_connections(predictors_node,
 
     """
     return True
+
+
 class R2(TextBox):
     """
     A textbox that is located below the actual node. This textbox is used to show additional information, mainly the R squared in regressions.
@@ -40,23 +41,29 @@ class R2(TextBox):
 
     """
 
-    def __init__(self, canvas: "EdnoCanvas", 
-                 x: int, 
-                 y: int, 
-                 text: str, 
-                 font=("Arial", 9),
-                 box_shape: str ="rectangle",
-                 box_color: str ="#faf9f6",
-                 value: float | None = None) -> None:
+    def __init__(
+        self,
+        canvas: "EdnoCanvas",
+        x: int,
+        y: int,
+        text: str,
+        font=("Arial", 9),
+        box_shape: str = "rectangle",
+        box_color: str = "#faf9f6",
+        value: float | None = None,
+    ) -> None:
 
-        super().__init__(canvas=canvas,
-                         x=x,
-                         y=y,
-                         text=text,
-                         font=font,
-                         box_shape=box_shape,
-                         box_color=box_color)
+        super().__init__(
+            canvas=canvas,
+            x=x,
+            y=y,
+            text=text,
+            font=font,
+            box_shape=box_shape,
+            box_color=box_color,
+        )
         self.value = value
+
 
 class Node(TextBox):
     """
@@ -75,12 +82,12 @@ class Node(TextBox):
     predictors_arrow_id : list
         list with ids of all predictors_arrow_id connections (connections where the node is a dependent). These are the ids of the arrows!
     additional_information: dict
-        Optional dict to store additional information (e.g., the name of an arrow, ...)    
+        Optional dict to store additional information (e.g., the name of an arrow, ...)
     context_menu : tk.Menu
         right click menu showing options to add paths, delete, ...
     r2: int
         TextBox with value of R Squared
-    
+
     Methods
     -------
     add_r2()
@@ -117,9 +124,16 @@ class Node(TextBox):
         used for moving the node
     """
 
-    def __init__(self, canvas: "EdnoCanvas", label: str, x: int, y: int, type: str,
-    shape:str,
-                 additional_information: None | dict[Any, Any] = None) -> None:
+    def __init__(
+        self,
+        canvas: "EdnoCanvas",
+        label: str,
+        x: int,
+        y: int,
+        type: str,
+        shape: str,
+        additional_information: None | dict[Any, Any] = None,
+    ) -> None:
         """
         Parameters
         ----------
@@ -139,18 +153,20 @@ class Node(TextBox):
         if label == "":
             label = create_label(canvas.nodes)
 
-        super().__init__(canvas=canvas,
-                         x=x,
-                         y=y,
-                         text=label,
-                         box_shape=shape,
-                         box_color="#cfcfcf",
-                         space_around=10)
-        # the node id uniquely identifies the entire node. It is identical to the 
+        super().__init__(
+            canvas=canvas,
+            x=x,
+            y=y,
+            text=label,
+            box_shape=shape,
+            box_color="#cfcfcf",
+            space_around=10,
+        )
+        # the node id uniquely identifies the entire node. It is identical to the
         # text id
         self.node_id = self.text_id
 
-        # dependents_arrow_id and predictors_arrow_id will save the ids of the ARROWS of predictor and 
+        # dependents_arrow_id and predictors_arrow_id will save the ids of the ARROWS of predictor and
         # dependent nodes
         self.dependents_arrow_id: list[int] = []
         self.predictors_arrow_id: list[int] = []
@@ -164,13 +180,15 @@ class Node(TextBox):
         # R Squared
         # located below node
         bbox = self.canvas.bbox(self.text_id)
-        self.r2 = R2(canvas=self.canvas,
-                          x=bbox[0] + .5*(bbox[2]-bbox[0]),
-                          y=bbox[3] + 25,
-                          text="",
-                          font=("Arial", 9),
-                          box_color="#faf9f6",
-                          value = None)
+        self.r2 = R2(
+            canvas=self.canvas,
+            x=bbox[0] + 0.5 * (bbox[2] - bbox[0]),
+            y=bbox[3] + 25,
+            text="",
+            font=("Arial", 9),
+            box_color="#faf9f6",
+            value=None,
+        )
         self.r2.hide()
 
         self.add_actions()
@@ -205,6 +223,7 @@ class Node(TextBox):
         self.canvas.tag_bind(self.text_id, "<Button-3>", self.context_menu_show)
         self.canvas.tag_bind(self.shape_id, "<Button-3>", self.context_menu_show)
 
+
     def context_menu_show(self, event: tk.Event) -> None:
         """
         Add right-click menu to the node.
@@ -227,10 +246,10 @@ class Node(TextBox):
     def move(self, delta_x: float, delta_y: float) -> None:
         """
         Move the node in space.
-        
-        The location of the node is given by the location of its label. This location is specified as a single 
+
+        The location of the node is given by the location of its label. This location is specified as a single
         point [x1,y1]. move() adjusts this points.
-        
+
         Parameters
         ----------
         delta_x : float
@@ -240,23 +259,17 @@ class Node(TextBox):
         """
         self.canvas.move(self.text_id, delta_x, delta_y)
         self.canvas.move(self.shape_id, delta_x, delta_y)
-        self.r2.move(delta_x, delta_y)        
+        self.r2.move(delta_x, delta_y)
 
         for out in self.dependents_arrow_id:
             for arr in self.canvas.arrows:
                 if arr.id == out:
-                    arr.move(delta_x,
-                             delta_y,
-                             0,
-                             0)
+                    arr.move(delta_x, delta_y, 0, 0)
         for inc in self.predictors_arrow_id:
             for arr in self.canvas.arrows:
                 if arr.id == inc:
-                    arr.move(0,
-                             0,
-                             delta_x,
-                             delta_y)
-                    
+                    arr.move(0, 0, delta_x, delta_y)
+
     def move_to(self, x: int | float, y: int | float) -> None:
         """
         Moves the text box to the specified location.
@@ -267,7 +280,6 @@ class Node(TextBox):
         """
         raise ValueError("Cannot use move_to for class Node. Only move is allowed.")
 
-    
     def get_label(self) -> str:
         """
         Return the label of a node
@@ -291,9 +303,15 @@ class Node(TextBox):
         for arrs in self.canvas.arrows:
             if arrs.id in remove_arrow:
                 arrs.delete()
-        self.canvas.nodes = [nd for nd in self.canvas.nodes if nd.node_id != self.node_id]
-        
-    def draw_arrow(self, event: tk.Event | None, check_connection_allowed: Callable = allow_all_connections) -> None:
+        self.canvas.nodes = [
+            nd for nd in self.canvas.nodes if nd.node_id != self.node_id
+        ]
+
+    def draw_arrow(
+        self,
+        event: tk.Event | None,
+        check_connection_allowed: Callable = allow_all_connections,
+    ) -> None:
         """
         Draw an arrow between nodes.
 
@@ -304,9 +322,11 @@ class Node(TextBox):
         if self.canvas.drawing_arrow:
             start_node = self.canvas.arrow_start_node
             end_node = self.node_id
-            if check_connection_allowed(predictors_node = start_node, 
-                                        dependents_node = end_node, 
-                                        all_nodes=self.canvas.nodes):
+            if check_connection_allowed(
+                predictors_node=start_node,
+                dependents_node=end_node,
+                all_nodes=self.canvas.nodes,
+            ):
                 # get center of object
                 bbox = self.canvas.bbox(start_node)
                 x1 = bbox[0] + 0.5 * (bbox[2] - bbox[0])
@@ -317,26 +337,35 @@ class Node(TextBox):
 
                 # draw arrow:
                 new_arrow = self.canvas.create_line(
-                    x1, y1, x2, y2, width=3, activewidth=4, activefill="#3b8ed0"
+                    x1, y1, x2, y2
                 )
                 self.canvas.tag_lower(new_arrow)
                 self.canvas.tag_lower(new_arrow)
                 self.canvas.arrows.append(
-                    Arrow(self.canvas, new_arrow, predictors_id=start_node, dependents_id=end_node)
+                    Arrow(
+                        self.canvas,
+                        new_arrow,
+                        predictors_id=start_node,
+                        dependents_id=end_node,
+                    )
                 )
             else:
                 self.canvas.drawing_arrow = False
                 self.canvas.arrow_start_node = None
+                if self.canvas.temporary_arrow is not None:
+                    self.canvas.delete(self.canvas.temporary_arrow)
+                    self.canvas.temporary_arrow = None
         for nd in self.canvas.nodes:
             if self.canvas.drawing_arrow:
                 if nd.node_id == start_node:
                     nd.dependents_arrow_id.append(new_arrow)
                 if nd.node_id == end_node:
                     nd.predictors_arrow_id.append(new_arrow)
-            self.canvas.itemconfig(nd.shape_id, fill="#cfcfcf", outline="#cfcfcf")
-            self.canvas.itemconfig(nd.node_id, fill="#000000")
         self.canvas.drawing_arrow = False
         self.canvas.arrow_start_node = None
+        if self.canvas.temporary_arrow is not None:
+            self.canvas.delete(self.canvas.temporary_arrow)
+            self.canvas.temporary_arrow = None
 
     def on_start_drag(self, event: tk.Event) -> None:
         """
@@ -379,7 +408,7 @@ class Node(TextBox):
         snap_dist = 3
         closest_xy = find_closest_node_xy(self, self.canvas.nodes)
         if (abs(closest_xy["delta_x"]) < snap_dist) & (abs(delta_x) < snap_dist):
-            delta_x = closest_xy["closest_x"]- self.get_location()[0]
+            delta_x = closest_xy["closest_x"] - self.get_location()[0]
         if (abs(closest_xy["delta_y"]) < snap_dist) & (abs(delta_y) < snap_dist):
             delta_y = closest_xy["closest_y"] - self.get_location()[1]
 
@@ -393,7 +422,7 @@ class Node(TextBox):
         Returns
         -------
         Returns a dictionary with
-        
+
         id: int
             The numeric id of the object on the canvas
         label: string
@@ -410,10 +439,22 @@ class Node(TextBox):
             R squared
         """
 
-        predictor_arrows = [inc_arr.predictors_id for inc_arr in self.canvas.arrows if inc_arr.id in self.predictors_arrow_id]
-        predictor_nodes = [nd.get_label() for nd in self.canvas.nodes if nd.node_id in predictor_arrows]
-        dependent_arrows = [out_arr.dependents_id for out_arr in self.canvas.arrows if out_arr.id in self.dependents_arrow_id]
-        dependent_nodes = [nd.get_label() for nd in self.canvas.nodes if nd.node_id in dependent_arrows]
+        predictor_arrows = [
+            inc_arr.predictors_id
+            for inc_arr in self.canvas.arrows
+            if inc_arr.id in self.predictors_arrow_id
+        ]
+        predictor_nodes = [
+            nd.get_label() for nd in self.canvas.nodes if nd.node_id in predictor_arrows
+        ]
+        dependent_arrows = [
+            out_arr.dependents_id
+            for out_arr in self.canvas.arrows
+            if out_arr.id in self.dependents_arrow_id
+        ]
+        dependent_nodes = [
+            nd.get_label() for nd in self.canvas.nodes if nd.node_id in dependent_arrows
+        ]
 
         node_dict = {
             "id": self.node_id,
@@ -422,16 +463,16 @@ class Node(TextBox):
             "position": self.canvas.coords(self.node_id),
             "predictors": predictor_nodes,
             "dependents": dependent_nodes,
-            "r2": self.r2.value
+            "r2": self.r2.value,
         }
 
         return node_dict
 
-def create_label(nodes: list[Node],
-                 base: str = "var_") -> str:
+
+def create_label(nodes: list[Node], base: str = "var_") -> str:
     """
     Create a valid label for a node
-    
+
     Nodes must have unique labels. This function generates a valid label for a new node.
 
     Parameters
@@ -446,7 +487,7 @@ def create_label(nodes: list[Node],
         if check_label(new_label, nodes):
             break
     return new_label
-    
+
 
 def check_label(new_label: str, nodes: list[Node]) -> bool:
     """
@@ -496,6 +537,15 @@ class NodeMenu(tk.Menu):
         Add a path to a node. This function does not draw the arrow; it just checks if we are
         currently in a drawing-state. If not, it starts the drawing mode and allows adding a path.
         """
+        node_position = self.canvas.coords(self.node_id)
+        self.canvas.temporary_arrow = self.canvas.create_line(
+            node_position[0],
+            node_position[1],
+            node_position[0],
+            node_position[1],
+            width=2
+        )
+        self.canvas.tag_lower(self.canvas.temporary_arrow)
         self.canvas.drawing_arrow = True
         self.canvas.arrow_start_node = self.node_id
         # close context menu
@@ -510,16 +560,21 @@ class NodeMenu(tk.Menu):
         input = ctk.CTkInputDialog(text="New variable name:", title="Rename Variable")
         new_label = input.get_input()  # opens the dialog
         if (new_label is not None) and (len(new_label) > 0):
-            if check_label(new_label=new_label, nodes = self.canvas.nodes):
+            if check_label(new_label=new_label, nodes=self.canvas.nodes):
                 # get current node and change label
-                [nd.set_text(new_label) for nd in self.canvas.nodes if nd.node_id == self.node_id]
+                [
+                    nd.set_text(new_label)
+                    for nd in self.canvas.nodes
+                    if nd.node_id == self.node_id
+                ]
             else:
                 tk.messagebox.showerror(
                     title="Duplicated Variable",
-                    message=f"The variable {new_label} is already in the model.")
+                    message=f"The variable {new_label} is already in the model.",
+                )
         # close context menu
         self.canvas.context_menu = None
-                
+
     def delete(self) -> None:
         """
         Delete the node from the canvas.
@@ -557,8 +612,9 @@ def find_closest_node_xy(node: Node, nodes: list[Node]) -> dict[str, float]:
         if abs(dist["y_dist"]) < abs(delta_y):
             closest_y = nd.get_location()[1]
             delta_y = dist["y_dist"]
-    return({"closest_x": closest_x,
-            "delta_x": delta_x,
-            "closest_y": closest_y,
-            "delta_y": delta_y})
- 
+    return {
+        "closest_x": closest_x,
+        "delta_x": delta_x,
+        "closest_y": closest_y,
+        "delta_y": delta_y,
+    }

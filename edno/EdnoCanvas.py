@@ -3,6 +3,7 @@ from .nodes import Node
 from .arrow import Arrow
 import customtkinter as ctk
 
+
 class EdnoCanvas(tk.Canvas):
     """
     A custom canvas widget for interactive, directed graphs.
@@ -50,10 +51,12 @@ class EdnoCanvas(tk.Canvas):
         Reset the entire canvas by removing existing objects.
     """
 
-    def __init__(self, root: ctk.CTk, 
-                 form_names: dict[str, str] = {"rectangle": "rectangle",
-                                                    "ellipse": "ellipse"}, 
-                                                    **kwargs) -> None:
+    def __init__(
+        self,
+        root: ctk.CTk,
+        form_names: dict[str, str] = {"rectangle": "rectangle", "ellipse": "ellipse"},
+        **kwargs,
+    ) -> None:
         """
         Initialize a new EdnoCanvas.
 
@@ -62,7 +65,7 @@ class EdnoCanvas(tk.Canvas):
         root : ctk.CTk
             The ctk.CTk root object to which the EdnoCanvas should be added.
         form_names: dict[str, str]
-            Specifies what the rectangles and ellipse are called on the canvas. For example, 
+            Specifies what the rectangles and ellipse are called on the canvas. For example,
             {"rectangle": "manifest", "ellipse": "latent"} specifies that the rectangles will be called manifest variables and the ellipse will be called latent variables.
         **kwargs : optional
             Additional arguments passed to ctk.CTk.
@@ -70,8 +73,8 @@ class EdnoCanvas(tk.Canvas):
         Returns
         -------
         None
-        """        
-    
+        """
+
         super().__init__(root, kwargs)
 
         self.form_names = form_names
@@ -86,7 +89,7 @@ class EdnoCanvas(tk.Canvas):
         self.arrow_start_node = None
         # Context Menu
         # context_menu will be used to temporarily save a single
-        # context menu. This makes sure that, at any point, only one 
+        # context menu. This makes sure that, at any point, only one
         # menu is open
         self.context_menu = None
         self.canvas_context_menu = CanvasContextMenu(root, self, self.form_names)
@@ -104,6 +107,9 @@ class EdnoCanvas(tk.Canvas):
         self.bind("<Button-4>", self.zoom)
         self.bind("<Button-5>", self.zoom)
 
+        # we also track mouse movement to let temporary arrows follow the mouse
+        self.bind("<Motion>", self.update_temporary_arrow)
+
         self.scale_factor = 1.0
 
         self.font_size = 9.0
@@ -116,7 +122,7 @@ class EdnoCanvas(tk.Canvas):
         ----------
         event : tk.Event
             The tkinter event that tells us the coordinates we are moving towards.
-        
+
         Returns
         -------
         None
@@ -135,7 +141,7 @@ class EdnoCanvas(tk.Canvas):
         ----------
         event : tk.Event
             The tkinter event that tells us the coordinates we are moving towards.
-        
+
         Returns
         -------
         None
@@ -151,7 +157,7 @@ class EdnoCanvas(tk.Canvas):
         ----------
         event : tk.Event
             The tkinter event that tells us if we are scrolling in or out.
-        
+
         Returns
         -------
         None
@@ -171,10 +177,24 @@ class EdnoCanvas(tk.Canvas):
         text_fields = self.find_withtag("text_field")
         self.font_size = self.font_size * factor
         for text_field in text_fields:
-            font = self.itemcget(text_field, 'font').split(" ")[0]
-            self.itemconfigure(text_field, font = (font, int(self.font_size)))
+            font = self.itemcget(text_field, "font").split(" ")[0]
+            self.itemconfigure(text_field, font=(font, int(self.font_size)))
 
-            #txt = canvas.itemcget(typed_value, 'text')
+            # txt = canvas.itemcget(typed_value, 'text')
+
+    def update_temporary_arrow(self, event: tk.Event) -> None:
+        if self.drawing_arrow:
+            mouse_position = [
+                self.canvasx(event.x),
+                self.canvasy(event.y)
+            ]
+            self.coords(
+                self.temporary_arrow,
+                self.coords(self.temporary_arrow)[0],
+                self.coords(self.temporary_arrow)[1],
+                mouse_position[0],
+                mouse_position[1],
+            )
 
     def reset(self) -> None:
         """
@@ -183,17 +203,23 @@ class EdnoCanvas(tk.Canvas):
         self.delete("all")
         self.nodes = []
         self.arrows = []
+        self.temporary_arrow = None
         self.drawing_arrow = False
         self.arrow_start_node = None
         self.context_menu = None
+
 
 class CanvasContextMenu:
     """
     The context menu will allow adding new constructs, observables, etc. on right click.
     """
 
-    def __init__(self, root: ctk.CTk, canvas: "EdnoCanvas", form_names: dict[str, str] = {"rectangle": "rectangle",
-                                                    "ellipse": "ellipse"},) -> None:
+    def __init__(
+        self,
+        root: ctk.CTk,
+        canvas: "EdnoCanvas",
+        form_names: dict[str, str] = {"rectangle": "rectangle", "ellipse": "ellipse"},
+    ) -> None:
         """
         Initializes a new instance of the CanvasContextMenu class.
 
@@ -201,17 +227,19 @@ class CanvasContextMenu:
             root (ctk.CTk): The root window of the GUI.
             canvas (EdnoCanvas): The canvas object associated with the context menu.
             form_names: dict[str, str]
-                Specifies what the rectangles and ellipse are called on the canvas. For example, 
+                Specifies what the rectangles and ellipse are called on the canvas. For example,
                 {"rectangle": "manifest", "ellipse": "latent"} specifies that the rectangles will be called manifest variables and the ellipse will be called latent variables.
         """
         self.canvas = canvas
         self.form_names = form_names
         self.canvas_context_menu = tk.Menu(root, tearoff=0)
-        self.canvas_context_menu.add_command(label=f"Add {self.form_names['ellipse']}",
-                                              command=self.create_ellipse)
-        self.canvas_context_menu.add_command(label=f"Add {self.form_names['rectangle']}",
-                                              command=self.create_rectangle)
-        
+        self.canvas_context_menu.add_command(
+            label=f"Add {self.form_names['ellipse']}", command=self.create_ellipse
+        )
+        self.canvas_context_menu.add_command(
+            label=f"Add {self.form_names['rectangle']}", command=self.create_rectangle
+        )
+
         self.canvas.bind("<Button-3>", self.show_right_click_menu)
         self.canvas.bind("<Button-1>", self.release_right_click_menu)
 
@@ -219,24 +247,32 @@ class CanvasContextMenu:
         """
         Creates a new ellipse node on the canvas at the position of the context menu.
         """
-        self.canvas.nodes.append(Node(self.canvas,
-                   label="",
-                   x=self.canvas.context_menu.position[0],
-                   y=self.canvas.context_menu.position[1],
-                   type=self.form_names['ellipse'], 
-                   shape="ellipse"))
+        self.canvas.nodes.append(
+            Node(
+                self.canvas,
+                label="",
+                x=self.canvas.context_menu.position[0],
+                y=self.canvas.context_menu.position[1],
+                type=self.form_names["ellipse"],
+                shape="ellipse",
+            )
+        )
         self.canvas.context_menu = None
-    
+
     def create_rectangle(self) -> None:
         """
         Creates a new rectangle node on the canvas at the position of the context menu.
         """
-        self.canvas.nodes.append(Node(self.canvas,
-                   label="",
-                   x=self.canvas.context_menu.position[0],
-                   y=self.canvas.context_menu.position[1],
-                   type=self.form_names['rectangle'], 
-                   shape="rectangle"))
+        self.canvas.nodes.append(
+            Node(
+                self.canvas,
+                label="",
+                x=self.canvas.context_menu.position[0],
+                y=self.canvas.context_menu.position[1],
+                type=self.form_names["rectangle"],
+                shape="rectangle",
+            )
+        )
         self.canvas.context_menu = None
 
     def show_right_click_menu(self, event: tk.Event) -> None:
@@ -253,10 +289,11 @@ class CanvasContextMenu:
         # https://www.geeksforgeeks.org/right-click-menu-using-tkinter/
         try:
             self.canvas.context_menu.tk_popup(event.x_root, event.y_root, 0)
-        finally: 
+        finally:
             self.canvas.context_menu.grab_release()
             # save position on canvas to add nodes at that position
-            self.canvas.context_menu.position = [event.x, event.y]
+            self.canvas.context_menu.position = [self.canvas.canvasx(event.x), 
+                                                 self.canvas.canvasy(event.y)]
 
     def release_right_click_menu(self, event: tk.Event) -> None:
         """
@@ -271,5 +308,6 @@ class CanvasContextMenu:
         if self.canvas.drawing_arrow:
             self.canvas.drawing_arrow = False
             self.canvas.arrow_start_node = None
-            for nd in self.canvas.nodes: 
-                self.canvas.itemconfig(nd.shape, fill='white')
+            if self.canvas.temporary_arrow is not None:
+                self.canvas.delete(self.canvas.temporary_arrow)
+                self.canvas.temporary_arrow = None

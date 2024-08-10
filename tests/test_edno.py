@@ -59,6 +59,8 @@ class TestGUI(unittest.TestCase):
         self.app.arrow_start_node = self.app.nodes[1].node_id
         self.app.nodes[0].draw_arrow(event=None)
         self.app.drawing_arrow = False
+        if self.app.temporary_arrow is not None:
+            self.app.delete(self.app.temporary_arrow)
 
         # check arrow coordinates
         start_coords = self.app.coords(self.app.arrows[0].id)
@@ -128,6 +130,8 @@ class TestGUI(unittest.TestCase):
         self.app.arrow_start_node = self.app.nodes[1].node_id
         self.app.nodes[0].draw_arrow(event=None)
         self.app.drawing_arrow = False
+        if self.app.temporary_arrow is not None:
+            self.app.delete(self.app.temporary_arrow)
 
         self.assertEqual(len(self.app.arrows), 1)
         self.assertEqual(self.app.arrows[0].predictors_id, self.app.nodes[1].node_id)

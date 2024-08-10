@@ -517,6 +517,8 @@ class NodeMenu(tk.Menu):
                 tk.messagebox.showerror(
                     title="Duplicated Variable",
                     message=f"The variable {new_label} is already in the model.")
+        # close context menu
+        self.canvas.context_menu = None
                 
     def delete(self) -> None:
         """

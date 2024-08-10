@@ -327,10 +327,14 @@ def find_line_ellipse_intersection(
     h, k = ellipse_center
     p1, p2 = line_start
 
-    t = (ellipse_height * ellipse_width) / (
+    div = (
         ((ellipse_height**2) * ((k - p2) ** 2) + (ellipse_width**2) * (h - p1) ** 2)
         ** 0.5
     )
+
+    if abs(div) < 1e-5:
+        div = 1e-5
+    t = (ellipse_height * ellipse_width) / div
     contact_point = [h + t * (p1 - h), k + t * (p2 - k)]
 
     return contact_point

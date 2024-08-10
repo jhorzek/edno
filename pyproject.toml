@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "edno"
+version = "0.1.0"
+description = "A widget for creating basic interactive, directed graphs with EDges and NOdes."
+authors = ["Jannik H. Orzek <jannik.orzek@mailbox.org>"]
+license = "GPL"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pillow = "^10.0.0"
+customtkinter = "^5.2.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

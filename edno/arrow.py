@@ -81,6 +81,7 @@ class Arrow:
                  id: int, 
                  dependents_id: int, 
                  predictors_id: int,
+                 font = ("Arial", 9),
                  additional_information: None | dict[Any, Any] = None) -> None:
         """
         Parameters
@@ -96,6 +97,7 @@ class Arrow:
         """
         self.canvas = canvas
         self.id = id
+        self.font = font
         self.additional_information = additional_information
         self.add_estimate()
         self.dependents_id = dependents_id
@@ -164,7 +166,7 @@ class Arrow:
                     x=line_center[0],
                     y=line_center[1],
                     text="",
-                    font=("Arial", 9),
+                    font=self.font,
                     box_color="#faf9f6")
         self.estimate.hide()
 
@@ -182,7 +184,7 @@ class Arrow:
         if est != "":
             self.estimate.value = est
             self.estimate.significance = sig
-            self.estimate.set_text(f"{est:.2f}{sig}", font=("Arial", 9))
+            self.estimate.set_text(f"{est:.2f}{sig}", font=self.font)
             self.estimate.show()
         else:
             self.estimate.value = None
@@ -449,6 +451,7 @@ class ArrowHead:
             outline="black",
             width=2,
         )
+        self.canvas.tag_lower(self.arrow_id)
 
     def get_target_coords(self) -> list[float]:
         """

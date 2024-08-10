@@ -133,6 +133,7 @@ class Node(TextBox):
         type: str,
         shape: str,
         additional_information: None | dict[Any, Any] = None,
+        font = ("Arial", 9),
     ) -> None:
         """
         Parameters
@@ -149,6 +150,7 @@ class Node(TextBox):
             "optional type.
         """
         self.shape = shape
+        self.font = font
 
         if label == "":
             label = create_label(canvas.nodes)
@@ -161,6 +163,7 @@ class Node(TextBox):
             box_shape=shape,
             box_color="#cfcfcf",
             space_around=10,
+            font = self.font
         )
         # the node id uniquely identifies the entire node. It is identical to the
         # text id
@@ -185,13 +188,15 @@ class Node(TextBox):
             x=bbox[0] + 0.5 * (bbox[2] - bbox[0]),
             y=bbox[3] + 25,
             text="",
-            font=("Arial", 9),
+            font=self.font,
             box_color="#faf9f6",
             value=None,
         )
         self.r2.hide()
 
         self.add_actions()
+
+        self.drag_data = None
 
     def set_r2(self, r2: float) -> None:
         """
@@ -205,7 +210,7 @@ class Node(TextBox):
         if r2 != "":
             self.r2.value = r2
             r2_text: str = f"R\u00b2 = {r2:.2f}"
-            self.r2.set_text(r2_text, font=("Arial", 9))
+            self.r2.set_text(r2_text, font=self.font)
             self.r2.show()
 
     def add_actions(self) -> None:
@@ -390,6 +395,7 @@ class Node(TextBox):
         """
         # ensure that the canvas is not moving as well:
         self.canvas.model_elements_are_moving = False
+        self.drag_data = None
 
     def on_drag(self, event: tk.Event) -> None:
         """
@@ -399,6 +405,11 @@ class Node(TextBox):
         ----------
             event: tkinter event.
         """
+        if self.drag_data is None:
+            # this is just a backup in case the drag_data is not correctly
+            # set by on_start_drag
+            self.drag_data = {"x": event.x, "y": event.y}
+            return
         delta_x: float = float(event.x - self.drag_data["x"])
         delta_y: float = float(event.y - self.drag_data["y"])
         # for snapping, we are looking for the nodes with the closest x and y distance. If this distance is lower than

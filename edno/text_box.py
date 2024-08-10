@@ -96,6 +96,10 @@ class TextBox:
         self.canvas.itemconfig(self.text_id, text=self.text, font=font)
         self.show()
         # update box
+        self.update_box()
+
+    def update_box(self) -> None:
+        # update box
         bbox = self.canvas.bbox(self.text_id)
         x1, y1, x2, y2 = (
             bbox[0] - self.space_around,
@@ -103,7 +107,7 @@ class TextBox:
             bbox[2] + self.space_around,
             bbox[3] + self.space_around,
         )
-        self.canvas.coords(self.shape_id, x1, y1, x2, y2)
+        self.canvas.coords(self.shape_id, x1, y1, x2, y2)     
 
     def set_color(self, color: str) -> None:
         """

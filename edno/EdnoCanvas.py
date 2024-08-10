@@ -30,8 +30,8 @@ class EdnoCanvas(tk.Canvas):
         Indicates whether the model elements (nodes, arrows) are currently being moved.
     scale_factor : float
         The current scale factor for zooming.
-    font_size : float
-        The current font size for text elements in the canvas.
+    font : float
+        The current font for text elements in the canvas.
 
     Methods
     -------
@@ -55,6 +55,7 @@ class EdnoCanvas(tk.Canvas):
         self,
         root: ctk.CTk,
         form_names: dict[str, str] = {"rectangle": "rectangle", "ellipse": "ellipse"},
+        font = ("Arial", 9),
         **kwargs,
     ) -> None:
         """
@@ -87,6 +88,7 @@ class EdnoCanvas(tk.Canvas):
         # for moving objects, etc. while arrows are being drawn.
         self.drawing_arrow = False
         self.arrow_start_node = None
+        self.temporary_arrow = None
         # Context Menu
         # context_menu will be used to temporarily save a single
         # context menu. This makes sure that, at any point, only one
@@ -112,7 +114,8 @@ class EdnoCanvas(tk.Canvas):
 
         self.scale_factor = 1.0
 
-        self.font_size = 9.0
+        self.base_font = font
+        self.font = font
 
     def start_scroll(self, event: tk.Event) -> None:
         """
@@ -175,12 +178,17 @@ class EdnoCanvas(tk.Canvas):
         self.configure(scrollregion=self.bbox("all"))
         # find all text elements and rescale
         text_fields = self.find_withtag("text_field")
-        self.font_size = self.font_size * factor
+        self.font = (self.base_font[0], max(2,int(self.base_font[1] * self.scale_factor)))
         for text_field in text_fields:
-            font = self.itemcget(text_field, "font").split(" ")[0]
-            self.itemconfigure(text_field, font=(font, int(self.font_size)))
-
-            # txt = canvas.itemcget(typed_value, 'text')
+            self.itemconfigure(text_field, font=self.font)
+        
+        # The boxes around the text field often do not update correctly, so
+        # we need to update them manually
+        for node in self.nodes:
+            node.update_box()
+        # the arrow heads also need to be updated
+        for arrow in self.arrows:
+            arrow.arrow_head.update()
 
     def update_temporary_arrow(self, event: tk.Event) -> None:
         if self.drawing_arrow:
@@ -255,6 +263,7 @@ class CanvasContextMenu:
                 y=self.canvas.context_menu.position[1],
                 type=self.form_names["ellipse"],
                 shape="ellipse",
+                font = self.canvas.font
             )
         )
         self.canvas.context_menu = None
@@ -271,6 +280,7 @@ class CanvasContextMenu:
                 y=self.canvas.context_menu.position[1],
                 type=self.form_names["rectangle"],
                 shape="rectangle",
+                font=self.canvas.font
             )
         )
         self.canvas.context_menu = None

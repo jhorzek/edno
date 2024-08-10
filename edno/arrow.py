@@ -460,7 +460,7 @@ class ArrowHead:
         s_center = self.dependents_node[0].get_location()
         [s_x1, s_y1, s_x2, s_y2] = self.dependents_node[0].get_outline()
 
-        if self.dependents_node[0].type == "composite":
+        if self.dependents_node[0].shape == "ellipse":
             # we want the arrow to end at the collision point of line and
             # ellipse
             intersect = find_line_ellipse_intersection(
@@ -469,13 +469,13 @@ class ArrowHead:
                 ellipse_width=0.5 * (s_y2 - s_y1),
                 line_start=[x1, y1],
             )
-        elif self.dependents_node[0].type == "manifest":
+        elif self.dependents_node[0].shape == "rectangle":
             intersect = find_line_rectangle_intersection(
                 line_coords=self.canvas.coords(self.line_id),
                 rectangle_coords=self.canvas.coords(self.dependents_node[0].shape_id)
             )
         else:
-            raise ValueError("Expected type of node to be composite or manifest.")
+            raise ValueError("Expected shape of node to be ellipse or rectangle.")
         
         line_coord = self.canvas.coords(self.line_id)
         x = intersect[0]

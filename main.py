@@ -9,5 +9,6 @@ if __name__ == "__main__":
 
     root = ctk.CTk()
     root.geometry("1000x850")
-    edno.EdnoCanvas(root)
+    dag = edno.EdnoCanvas(root)
+    dag.pack()
     root.mainloop()

@@ -205,10 +205,11 @@ class CanvasContextMenu:
                 {"rectangle": "manifest", "ellipse": "latent"} specifies that the rectangles will be called manifest variables and the ellipse will be called latent variables.
         """
         self.canvas = canvas
+        self.form_names = form_names
         self.canvas_context_menu = tk.Menu(root, tearoff=0)
         self.canvas_context_menu.add_command(label=f"Add {self.form_names['ellipse']}",
                                               command=self.create_ellipse)
-        self.canvas_context_menu.add_command(label=f"Add {self.form_names['ellipse']}",
+        self.canvas_context_menu.add_command(label=f"Add {self.form_names['rectangle']}",
                                               command=self.create_rectangle)
         
         self.canvas.bind("<Button-3>", self.show_right_click_menu)
@@ -222,7 +223,8 @@ class CanvasContextMenu:
                    label="",
                    x=self.canvas.context_menu.position[0],
                    y=self.canvas.context_menu.position[1],
-                   type=self.form_names['ellipse']))
+                   type=self.form_names['ellipse'], 
+                   shape="ellipse"))
         self.canvas.context_menu = None
     
     def create_rectangle(self) -> None:
@@ -233,7 +235,8 @@ class CanvasContextMenu:
                    label="",
                    x=self.canvas.context_menu.position[0],
                    y=self.canvas.context_menu.position[1],
-                   type=self.form_names['rectangle']))
+                   type=self.form_names['rectangle'], 
+                   shape="rectangle"))
         self.canvas.context_menu = None
 
     def show_right_click_menu(self, event: tk.Event) -> None:

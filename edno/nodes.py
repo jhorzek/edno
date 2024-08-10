@@ -1,11 +1,26 @@
 import customtkinter as ctk
 import tkinter as tk
-from plspm.scale import Scale
 from math import inf
-from typing import Any
-from .arrow import Arrow, check_connection_allowed
+from typing import Any, Callable
+from .arrow import Arrow
 from .text_box import TextBox, distance
 
+def allow_all_connections(predictors_node, 
+                          dependents_node, 
+                          all_nodes) -> bool:
+    """
+    Allow all connections between nodes. This function is a placeholder that can be replaced with more sophisticated rules that determine if a connection is allowed or not.
+
+    Args:
+        predictors_node (Node): The node that is the predictor.
+        dependents_node (Node): The node that is the dependent.
+        all_nodes (list[Node]): A list of all nodes in the canvas.
+
+    Returns:
+        bool: Always True.
+
+    """
+    return True
 class R2(TextBox):
     """
     A textbox that is located below the actual node. This textbox is used to show additional information, mainly the R squared in regressions.
@@ -277,8 +292,8 @@ class Node(TextBox):
             if arrs.id in remove_arrow:
                 arrs.delete()
         self.canvas.nodes = [nd for nd in self.canvas.nodes if nd.node_id != self.node_id]
-
-    def draw_arrow(self, event: tk.Event | None, check_connection_allowed: function = lambda predictors_node, dependents_node, all_nodes: True) -> None:
+        
+    def draw_arrow(self, event: tk.Event | None, check_connection_allowed: Callable = allow_all_connections) -> None:
         """
         Draw an arrow between nodes.
 

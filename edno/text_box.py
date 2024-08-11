@@ -10,9 +10,10 @@ class TextBox:
         y: int | float,
         text: str,
         font: tuple[str, int] = ("Arial", 9),
-        box_shape: str ="rectangle",
-        box_color: str ="#faf9f6",
-        space_around: int =4,
+        font_color: str = "#000000",
+        box_shape: str = "rectangle",
+        box_color: str = "#faf9f6",
+        space_around: int = 4,
     ) -> None:
         """
         Initializes a TextBox instance.
@@ -31,7 +32,9 @@ class TextBox:
         self.text = text
         self.shape = box_shape
         self.space_around = space_around
-        self.text_id = canvas.create_text(x, y, text=text, font=font, tags = "text_field")
+        self.text_id = canvas.create_text(
+            x, y, text=text, font=font, tags="text_field", fill=font_color
+        )
 
         # For the shape, we first determine the outline of the text
         bbox = canvas.bbox(self.text_id)
@@ -65,7 +68,7 @@ class TextBox:
         """
         self.canvas.move(self.text_id, delta_x, delta_y)
         self.canvas.move(self.shape_id, delta_x, delta_y)
-    
+
     def move_to(self, x: int | float, y: int | float) -> None:
         """
         Moves the text box to the specified location.
@@ -84,7 +87,7 @@ class TextBox:
         self.canvas.delete(self.text_id)
         self.canvas.delete(self.shape_id)
 
-    def set_text(self, text: str, font: tuple[str, int]=("Arial", 9)) -> None:
+    def set_text(self, text: str, font: tuple[str, int] = ("Arial", 9)) -> None:
         """
         Sets the text of the text box and updates its appearance.
 
@@ -107,7 +110,7 @@ class TextBox:
             bbox[2] + self.space_around,
             bbox[3] + self.space_around,
         )
-        self.canvas.coords(self.shape_id, x1, y1, x2, y2)     
+        self.canvas.coords(self.shape_id, x1, y1, x2, y2)
 
     def set_color(self, color: str) -> None:
         """
@@ -152,7 +155,7 @@ class TextBox:
         - A list containing the x and y coordinates of the text box.
         """
         return self.canvas.coords(self.text_id)
-    
+
     def get_outline(self) -> list[float]:
         """
         Gets the outline of the box around the text

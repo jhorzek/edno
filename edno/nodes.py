@@ -48,6 +48,7 @@ class R2(TextBox):
         y: int,
         text: str,
         font=("Arial", 9),
+        font_color="#000000",
         box_shape: str = "rectangle",
         value: float | None = None,
     ) -> None:
@@ -60,6 +61,7 @@ class R2(TextBox):
             font=font,
             box_shape=box_shape,
             box_color=canvas["background"],
+            font_color=font_color,
         )
         self.value = value
 
@@ -134,11 +136,13 @@ class Node(TextBox):
         allowed_connections: Callable = allow_all_connections,
         additional_information: None | dict[Any, Any] = None,
         font=("Arial", 9),
+        font_color="#000000",
         node_color: dict[str, str] = {
             "default": "#ADD8E6",
             "allowed": "#90E4C1",
             "not allowed": "#ffcccb",
         },
+        arrow_color: str = "#000000",
     ) -> None:
         """
         Parameters
@@ -156,8 +160,10 @@ class Node(TextBox):
         """
         self.shape = shape
         self.font = font
+        self.font_color = font_color
         self.allowed_connections = allowed_connections
         self.node_color = node_color
+        self.arrow_color = arrow_color
 
         if label == "":
             label = create_label(canvas.nodes)
@@ -171,6 +177,7 @@ class Node(TextBox):
             box_color=node_color["default"],
             space_around=10,
             font=self.font,
+            font_color=self.font_color,
         )
         # the node id uniquely identifies the entire node. It is identical to the
         # text id
@@ -196,6 +203,7 @@ class Node(TextBox):
             y=bbox[3] + 25,
             text="",
             font=self.font,
+            font_color=self.font_color,
             value=None,
         )
         self.r2.hide()
@@ -345,7 +353,9 @@ class Node(TextBox):
                 y2 = bbox[1] + 0.5 * (bbox[3] - bbox[1])
 
                 # draw arrow:
-                new_arrow = self.canvas.create_line(x1, y1, x2, y2)
+                new_arrow = self.canvas.create_line(
+                    x1, y1, x2, y2, fill=self.arrow_color
+                )
                 self.canvas.tag_lower(new_arrow)
                 self.canvas.tag_lower(new_arrow)
                 self.canvas.arrows.append(
@@ -354,6 +364,7 @@ class Node(TextBox):
                         new_arrow,
                         predictors_id=start_node,
                         dependents_id=end_node,
+                        arrow_color=self.arrow_color,
                     )
                 )
             else:
@@ -592,6 +603,7 @@ class NodeMenu(tk.Menu):
             node_position[1],
             width=2,
             arrow=tk.LAST,
+            fill=self.canvas.arrow_color,
         )
         self.canvas.tag_lower(self.canvas.temporary_arrow)
         self.canvas.drawing_arrow = True

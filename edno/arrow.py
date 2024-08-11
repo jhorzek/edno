@@ -3,6 +3,7 @@ import tkinter as tk
 from .text_box import TextBox
 from typing import Any
 
+
 class Estimate(TextBox):
     """
     Estimates are drawn on arrows. The typical use case would be to show the estimation result from a model (e.g., a regression) or the name of a parameter.
@@ -17,26 +18,34 @@ class Estimate(TextBox):
         value (float | None, optional): The value of the estimate. Defaults to None.
         significance (str | None, optional): The significance of the estimate. Defaults to None.
     """
-    def __init__(self, 
-                 canvas: "EdnoCanvas", 
-                 text: str, 
-                 x: int | float, 
-                 y: int | float,
-                 font=("Arial", 9),
-                 box_color="#faf9f6",
-                 value: float | None=None,
-                 significance: str | None=None) -> None:
 
-        super().__init__(canvas=canvas,
-                         x=x,
-                         y=y,
-                         text=text,
-                         font = font,
-                         box_shape="rectangle",
-                         box_color=box_color,
-                         space_around=10)
+    def __init__(
+        self,
+        canvas: "EdnoCanvas",
+        text: str,
+        x: int | float,
+        y: int | float,
+        font=("Arial", 9),
+        font_color: str = "#000000",
+        box_color="#faf9f6",
+        value: float | None = None,
+        significance: str | None = None,
+    ) -> None:
+
+        super().__init__(
+            canvas=canvas,
+            x=x,
+            y=y,
+            text=text,
+            font=font,
+            font_color=font_color,
+            box_shape="rectangle",
+            box_color=box_color,
+            space_around=10,
+        )
         self.value = value
         self.significance = significance
+
 
 class Arrow:
     """
@@ -76,13 +85,18 @@ class Arrow:
     save() -> dict[str, float]:
         Save the arrow to a dictionary that allows reproducing the arrow.
     """
-    def __init__(self,
-                 canvas: "EdnoCanvas",
-                 id: int, 
-                 dependents_id: int, 
-                 predictors_id: int,
-                 font = ("Arial", 9),
-                 additional_information: None | dict[Any, Any] = None) -> None:
+
+    def __init__(
+        self,
+        canvas: "EdnoCanvas",
+        id: int,
+        dependents_id: int,
+        predictors_id: int,
+        font=("Arial", 9),
+        font_color: str = "#000000",
+        arrow_color="#000000",
+        additional_information: None | dict[Any, Any] = None,
+    ) -> None:
         """
         Parameters
         ----------
@@ -98,6 +112,8 @@ class Arrow:
         self.canvas = canvas
         self.id = id
         self.font = font
+        self.font_color = font_color
+        self.arrow_color = arrow_color
         self.additional_information = additional_information
         self.add_estimate()
         self.dependents_id = dependents_id
@@ -110,6 +126,7 @@ class Arrow:
             line_id=self.id,
             predictor_id=self.predictors_id,
             dependent_id=self.dependents_id,
+            arrow_color=self.arrow_color,
         )
         # Add right click menu
         self.canvas.tag_bind(self.id, "<Button-3>", self.context_menu_show)
@@ -157,17 +174,20 @@ class Arrow:
 
     def add_estimate(self) -> None:
         """Add a text field in the center of the line.
-        
+
         This text field can be filled with the estimate using set_estimate.
         """
         # we will draw the estimate at the center of the line
         line_center = self.get_line_center()
-        self.estimate = Estimate(canvas=self.canvas,
-                    x=line_center[0],
-                    y=line_center[1],
-                    text="",
-                    font=self.font,
-                    box_color="#faf9f6")
+        self.estimate = Estimate(
+            canvas=self.canvas,
+            x=line_center[0],
+            y=line_center[1],
+            text="",
+            font=self.font,
+            font_color=self.font_color,
+            box_color="#faf9f6",
+        )
         self.estimate.hide()
 
     def set_estimate(self, est: float, sig: str):
@@ -195,11 +215,11 @@ class Arrow:
     def context_menu_show(self, event: tk.Event) -> None:
         """
         Show the arrows context menu on right click. This menu will allow for deleting arrows, etc.
-        
+
         Parameters
         ----------
             event (tk.Event): Tkinter event object containing information about the location of the click.
-            
+
         Returns
         -------
             None
@@ -215,7 +235,9 @@ class Arrow:
             self.context_menu.grab_release()
             self.context_menu.position = [event.x, event.y]
 
-    def move(self, delta_x1: float, delta_y1: float, delta_x2: float, delta_y2: float) -> None:
+    def move(
+        self, delta_x1: float, delta_y1: float, delta_x2: float, delta_y2: float
+    ) -> None:
         """
         Move the arrow in space.
 
@@ -255,8 +277,12 @@ class Arrow:
     def delete(self) -> None:
         """Remove the arrow from the canvas"""
         for nd in self.canvas.nodes:
-            nd.dependents_arrow_id = [out for out in nd.dependents_arrow_id if out is not self.id]
-            nd.predictors_arrow_id = [inc for inc in nd.predictors_arrow_id if inc is not self.id]
+            nd.dependents_arrow_id = [
+                out for out in nd.dependents_arrow_id if out is not self.id
+            ]
+            nd.predictors_arrow_id = [
+                inc for inc in nd.predictors_arrow_id if inc is not self.id
+            ]
         self.canvas.delete(self.arrow_head.arrow_id)
         self.canvas.delete(self.estimate.delete())
         self.canvas.delete(self.id)
@@ -302,7 +328,10 @@ class Arrow:
 
 
 def find_line_ellipse_intersection(
-    ellipse_center: list[float|int], ellipse_height: float|int, ellipse_width: float|int, line_start: list[float|int]
+    ellipse_center: list[float | int],
+    ellipse_height: float | int,
+    ellipse_width: float | int,
+    line_start: list[float | int],
 ) -> list[float]:
     """
     Finds the point that is on an ellipse for a line that ends at the
@@ -330,9 +359,8 @@ def find_line_ellipse_intersection(
     p1, p2 = line_start
 
     div = (
-        ((ellipse_height**2) * ((k - p2) ** 2) + (ellipse_width**2) * (h - p1) ** 2)
-        ** 0.5
-    )
+        (ellipse_height**2) * ((k - p2) ** 2) + (ellipse_width**2) * (h - p1) ** 2
+    ) ** 0.5
 
     if abs(div) < 1e-5:
         div = 1e-5
@@ -342,7 +370,9 @@ def find_line_ellipse_intersection(
     return contact_point
 
 
-def find_segment_intersection(segment_1: list[float], segment_2: list[float]) -> list[float] | None:
+def find_segment_intersection(
+    segment_1: list[float], segment_2: list[float]
+) -> list[float] | None:
     """
     Finds the intersection point between two line segments.
 
@@ -360,33 +390,48 @@ def find_segment_intersection(segment_1: list[float], segment_2: list[float]) ->
     # There are two divisions that might result in division by zero. We want
     # to make sure that we never divide by exactly zero
     div_1 = l1_x1 - l1_x2
-    div_2 = ((l1_x1 - l1_x2) * (l2_y1 - l2_y2) + l1_y1 * (l2_x2 - l2_x1) + l1_y2 * (l2_x1 - l2_x2))
+    div_2 = (
+        (l1_x1 - l1_x2) * (l2_y1 - l2_y2)
+        + l1_y1 * (l2_x2 - l2_x1)
+        + l1_y2 * (l2_x1 - l2_x2)
+    )
     if div_1 == 0.0:
         # the segment is perfectly vertical. We will replace the difference with a very small value
         # as we don't need to be too precise here. Note: If we just replace the div_1, we will run
         # into an annoying issue, where the arrow jumps the the origin of the predictor. Therefore,
         # we need to actually change l1_x1
-        l1_x1 = l1_x1+1
+        l1_x1 = l1_x1 + 1
         div_1 = l1_x1 - l1_x2
-        div_2 = ((l1_x1 - l1_x2) * (l2_y1 - l2_y2) + l1_y1 * (l2_x2 - l2_x1) + l1_y2 * (l2_x1 - l2_x2))
+        div_2 = (
+            (l1_x1 - l1_x2) * (l2_y1 - l2_y2)
+            + l1_y1 * (l2_x2 - l2_x1)
+            + l1_y2 * (l2_x1 - l2_x2)
+        )
     if div_2 == 0.0:
         # Here, we can just replace the div
         div_2 = 1.0
-    t = (l1_x1 * (l2_y1 - l1_y2) + l1_y1 * (l1_x2 - l2_x1) - l1_x2 * l2_y1 + l1_y2 * l2_x1)/div_2 
-    r = (l1_x1 + (t - 1) * l2_x1 - t * l2_x2)/div_1
+    t = (
+        l1_x1 * (l2_y1 - l1_y2)
+        + l1_y1 * (l1_x2 - l2_x1)
+        - l1_x2 * l2_y1
+        + l1_y2 * l2_x1
+    ) / div_2
+    r = (l1_x1 + (t - 1) * l2_x1 - t * l2_x2) / div_1
 
-    if ((t >= 0) &(t <= 1.0)) & (abs(r) <= 1.0):
+    if ((t >= 0) & (t <= 1.0)) & (abs(r) <= 1.0):
         # segments intersect!
-        intersection = [l1_x1 + r*(l1_x2-l1_x1), l1_y1 + r*(l1_y2-l1_y1)]
+        intersection = [l1_x1 + r * (l1_x2 - l1_x1), l1_y1 + r * (l1_y2 - l1_y1)]
         return intersection
     else:
         return None
-    
-def find_line_rectangle_intersection(line_coords: list[float],
-                                     rectangle_coords: list[float]) -> list[float]:
+
+
+def find_line_rectangle_intersection(
+    line_coords: list[float], rectangle_coords: list[float]
+) -> list[float]:
     """
     Finds the intersection point between a line and a rectangle.
-    
+
     Assumed coords of the rectangle:
     x1, y2 ------- x2, y2
       |              |
@@ -401,24 +446,53 @@ def find_line_rectangle_intersection(line_coords: list[float],
 
     """
 
-    rectangle_segments = [[rectangle_coords[0], rectangle_coords[1], rectangle_coords[2], rectangle_coords[1]], # x1, y1 ------- x1, y2
-                         [rectangle_coords[0], rectangle_coords[3], rectangle_coords[2], rectangle_coords[3]],  # x1, y2 ------- x2, y2
-
-                         [rectangle_coords[0], rectangle_coords[1], rectangle_coords[0], rectangle_coords[3]],  # x1, y1 | x1 y2
-                         [rectangle_coords[2], rectangle_coords[1], rectangle_coords[2], rectangle_coords[3]],  # x2, y1 | x2 y2                   
-                         ]
+    rectangle_segments = [
+        [
+            rectangle_coords[0],
+            rectangle_coords[1],
+            rectangle_coords[2],
+            rectangle_coords[1],
+        ],  # x1, y1 ------- x1, y2
+        [
+            rectangle_coords[0],
+            rectangle_coords[3],
+            rectangle_coords[2],
+            rectangle_coords[3],
+        ],  # x1, y2 ------- x2, y2
+        [
+            rectangle_coords[0],
+            rectangle_coords[1],
+            rectangle_coords[0],
+            rectangle_coords[3],
+        ],  # x1, y1 | x1 y2
+        [
+            rectangle_coords[2],
+            rectangle_coords[1],
+            rectangle_coords[2],
+            rectangle_coords[3],
+        ],  # x2, y1 | x2 y2
+    ]
     for rectangle_segment in rectangle_segments:
         intersect = find_segment_intersection(line_coords, rectangle_segment)
         if intersect is not None:
             return intersect
-    # if we can't find an intersection, the arrow is within the node. We will then just return the 
+    # if we can't find an intersection, the arrow is within the node. We will then just return the
     # location of the center of the node
-    return [rectangle_coords[0] + .5*(rectangle_coords[2] - rectangle_coords[0]),
-            rectangle_coords[1] + .5*(rectangle_coords[3] - rectangle_coords[1])]
+    return [
+        rectangle_coords[0] + 0.5 * (rectangle_coords[2] - rectangle_coords[0]),
+        rectangle_coords[1] + 0.5 * (rectangle_coords[3] - rectangle_coords[1]),
+    ]
 
 
 class ArrowHead:
-    def __init__(self, canvas: "EdnoCanvas", line_id: int, predictor_id: int, dependent_id: int) -> None:
+    def __init__(
+        self,
+        canvas: "EdnoCanvas",
+        line_id: int,
+        predictor_id: int,
+        dependent_id: int,
+        arrow_color: str = "#00000",
+    ) -> None:
         """
         Initialize an Arrow object.
 
@@ -447,8 +521,8 @@ class ArrowHead:
         coords = self.get_target_coords()
         self.arrow_id = self.canvas.create_polygon(
             coords,
-            fill="black",
-            outline="black",
+            fill=arrow_color,
+            outline=arrow_color,
             width=2,
         )
         self.canvas.tag_lower(self.arrow_id)
@@ -479,11 +553,11 @@ class ArrowHead:
         elif self.dependents_node[0].shape == "rectangle":
             intersect = find_line_rectangle_intersection(
                 line_coords=self.canvas.coords(self.line_id),
-                rectangle_coords=self.canvas.coords(self.dependents_node[0].shape_id)
+                rectangle_coords=self.canvas.coords(self.dependents_node[0].shape_id),
             )
         else:
             raise ValueError("Expected shape of node to be ellipse or rectangle.")
-        
+
         line_coord = self.canvas.coords(self.line_id)
         x = intersect[0]
         y = intersect[1]
@@ -492,7 +566,7 @@ class ArrowHead:
         # get line length
         line_len = (line_dir[0] ** 2 + line_dir[1] ** 2) ** 0.5
         if line_len == 0.0:
-            line_len = .01
+            line_len = 0.01
         # we want to go a few pixels in the direction of the dependents node
         # and a few pixels up/down
         x2 = x - (15 / line_len) * line_dir[0]

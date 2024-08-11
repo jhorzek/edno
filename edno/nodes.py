@@ -17,7 +17,6 @@ def allow_all_connections(predictors_node, dependents_node, all_nodes) -> bool:
 
     Returns:
         bool: Always True.
-
     """
     return True
 
@@ -48,8 +47,8 @@ class R2(TextBox):
         y: int,
         text: str,
         font=("Arial", 9),
+        font_color="#000000",
         box_shape: str = "rectangle",
-        box_color: str = "#faf9f6",
         value: float | None = None,
     ) -> None:
 
@@ -60,69 +59,14 @@ class R2(TextBox):
             text=text,
             font=font,
             box_shape=box_shape,
-            box_color=box_color,
+            box_color=canvas["background"],
+            font_color=font_color,
         )
         self.value = value
 
 
 class Node(TextBox):
-    """
-    Nodes are text boxes with added shapes and connections. They represent the variables within a model.
-
-    Attributes
-    ----------
-    canvas : Canvas
-        The apps canvas that is drawn upon
-    label: int
-        The id of the label object. The actual label must be extracted from the canvas
-    shape: int
-        The id of the shape that is drawn around the label.
-    dependents_arrow_id : list
-        list with ids of all dependents_arrow_id connections (connections where the node is a predictor). These are the ids of the arrows!
-    predictors_arrow_id : list
-        list with ids of all predictors_arrow_id connections (connections where the node is a dependent). These are the ids of the arrows!
-    additional_information: dict
-        Optional dict to store additional information (e.g., the name of an arrow, ...)
-    context_menu : tk.Menu
-        right click menu showing options to add paths, delete, ...
-    r2: int
-        TextBox with value of R Squared
-
-    Methods
-    -------
-    add_r2()
-        Adds the r2 attribute
-    set_r2(r2)
-        Sets the value of the r2 shown on the canvas
-    add_circle()
-        draws a circle around the object
-    add_square():
-        draws a square around the object
-    add_actions():
-        adds the left and right click actions to the model
-    set_scale():
-        specify the scale of the item
-    context_menu_show(event):
-        show the context menu
-    move(delta_x, delta_x):
-        move the node by delta_x and delta_y
-    rename():
-        launches a pop up to rename the node (change the label)
-    get_label():
-        get the actual text that is in the label
-    delete():
-        delete the node from the canvas.
-    start_connection_mode():
-        start adding a path between nodes
-    draw_arrow():
-        draws the actual arrow between nodes
-    on_start_drag():
-        used for moving the node
-    on_stop_drag():
-        used for moving the node
-    on_drag():
-        used for moving the node
-    """
+    """Nodes are text boxes with added shapes and connections. They represent the variables within a model."""
 
     def __init__(
         self,
@@ -135,25 +79,36 @@ class Node(TextBox):
         allowed_connections: Callable = allow_all_connections,
         additional_information: None | dict[Any, Any] = None,
         font=("Arial", 9),
-        node_color: str = "#cfcfcf",
+        font_color="#000000",
+        node_color: dict[str, str] = {
+            "default": "#ADD8E6",
+            "allowed": "#90E4C1",
+            "not allowed": "#ffcccb",
+        },
+        arrow_color: str = "#000000",
     ) -> None:
-        """
-        Parameters
-        ----------
-        canvas : Canvas
-            The canvas where the arrow will be added
-        label: string
-            The label (name) of the node. This will be shown on the canvas as the nodes name
-        x : int
-            The x-position of the new node on the canvas
-        y : int
-            The y-position of the new node on the canvas
-        type : string
-            "optional type.
+        """Initialize new Node
+
+        Args:
+            canvas (EdnoCanvas): The canvas to which the node will be added.
+            label (str): the text label of the node
+            x (int): the x position of the node
+            y (int): the y position of the node
+            type (str): the type allows describing what kind of node it is. For example, in SEM we distinguish between latent and observed variables. Here, we could use the type to distinguish between these two different types of nodes.
+            shape (str): one of "rectangle" or "ellipse"
+            allowed_connections (Callable, optional): this function will be called every time a user tries creating a new node. The function should return False if the user tries to create a non-allowed connection. Defaults to allow_all_connections. See allow_all_connections for the signature of these functions.
+            additional_information (None | dict[Any, Any], optional): Allows adding additional information to a node. Defaults to None.
+            font (tuple, optional): font of the text in the node. Defaults to ("Arial", 9).
+            font_color (str, optional): color of the node text. Defaults to "#000000".
+            node_color (_type_, optional): color of the node itself. Defaults to { "default": "#ADD8E6", "allowed": "#90E4C1", "not allowed": "#ffcccb", }.
+            arrow_color (str, optional): color of arrows. Defaults to "#000000".
         """
         self.shape = shape
         self.font = font
+        self.font_color = font_color
         self.allowed_connections = allowed_connections
+        self.node_color = node_color
+        self.arrow_color = arrow_color
 
         if label == "":
             label = create_label(canvas.nodes)
@@ -164,9 +119,10 @@ class Node(TextBox):
             y=y,
             text=label,
             box_shape=shape,
-            box_color=node_color,
+            box_color=node_color["default"],
             space_around=10,
             font=self.font,
+            font_color=self.font_color,
         )
         # the node id uniquely identifies the entire node. It is identical to the
         # text id
@@ -181,7 +137,7 @@ class Node(TextBox):
         self.scale: Any = None
 
         # Right click menu for node:
-        self.context_menu = NodeMenu(self.canvas, self.type, self.node_id)
+        self.context_menu = NodeMenu(self.canvas, self.node_id)
 
         # R Squared
         # located below node
@@ -192,7 +148,7 @@ class Node(TextBox):
             y=bbox[3] + 25,
             text="",
             font=self.font,
-            box_color="#faf9f6",
+            font_color=self.font_color,
             value=None,
         )
         self.r2.hide()
@@ -202,13 +158,10 @@ class Node(TextBox):
         self.drag_data = None
 
     def set_r2(self, r2: float) -> None:
-        """
-        Specify the R Squared value of a node
+        """Specify the R Squared value of a node. This value will be shown below the node.
 
-        Parameters
-        ----------
-        r2 : float
-            The R squared value.
+        Args:
+            r2 (float): The R squared value.
         """
         if r2 != "":
             self.r2.value = r2
@@ -230,14 +183,16 @@ class Node(TextBox):
         # Add right click menu
         self.canvas.tag_bind(self.text_id, "<Button-3>", self.context_menu_show)
         self.canvas.tag_bind(self.shape_id, "<Button-3>", self.context_menu_show)
+        # Hover effect: Used to chage color of the node when hovering over it in arrow drawing mode
+        self.canvas.tag_bind(self.text_id, "<Enter>", self.on_enter)
+        self.canvas.tag_bind(self.text_id, "<Leave>", self.on_leave)
 
     def context_menu_show(self, event: tk.Event) -> None:
         """
         Add right-click menu to the node.
 
-        Parameters
-        ----------
-            event: tkinter event to get the position of the click.
+        Args
+            event (tk.Event): tkinter event to get the position of the click.
         """
         if self.canvas.context_menu is None:
             self.canvas.context_menu = self.context_menu
@@ -251,18 +206,14 @@ class Node(TextBox):
             self.context_menu.position = [event.x, event.y]
 
     def move(self, delta_x: float, delta_y: float) -> None:
-        """
-        Move the node in space.
+        """Move the node in space.
 
         The location of the node is given by the location of its label. This location is specified as a single
         point [x1,y1]. move() adjusts this points.
 
-        Parameters
-        ----------
-        delta_x : float
-            Change in x
-        delta_y : float
-            Change in y
+        Args:
+            delta_x (float): Change in x
+            delta_y (float): Change in y
         """
         self.canvas.move(self.text_id, delta_x, delta_y)
         self.canvas.move(self.shape_id, delta_x, delta_y)
@@ -281,15 +232,18 @@ class Node(TextBox):
         """
         Moves the text box to the specified location.
 
-        Parameters:
-        - x: The location on the x-axis.
-        - y: The location on the y-axis.
+        Args:
+            x (int | float): The new location on the x-axis.
+            y (int | float): The new location on the y-axis.
         """
         raise ValueError("Cannot use move_to for class Node. Only move is allowed.")
 
     def get_label(self) -> str:
         """
         Return the label of a node
+
+        Returns:
+            str: The label of the node
         """
         return self.text
 
@@ -318,9 +272,8 @@ class Node(TextBox):
         """
         Draw an arrow between nodes.
 
-        Parameters
-        ----------
-            event: tkinter event.
+        Args
+            event (tk.Event | None): tkinter event.
         """
         if self.canvas.drawing_arrow:
             start_node = self.canvas.arrow_start_node
@@ -339,7 +292,9 @@ class Node(TextBox):
                 y2 = bbox[1] + 0.5 * (bbox[3] - bbox[1])
 
                 # draw arrow:
-                new_arrow = self.canvas.create_line(x1, y1, x2, y2)
+                new_arrow = self.canvas.create_line(
+                    x1, y1, x2, y2, fill=self.arrow_color
+                )
                 self.canvas.tag_lower(new_arrow)
                 self.canvas.tag_lower(new_arrow)
                 self.canvas.arrows.append(
@@ -348,6 +303,7 @@ class Node(TextBox):
                         new_arrow,
                         predictors_id=start_node,
                         dependents_id=end_node,
+                        arrow_color=self.arrow_color,
                     )
                 )
             else:
@@ -376,9 +332,8 @@ class Node(TextBox):
         """
         Move node on left-click-drag
 
-        Parameters
-        ----------
-            event: tkinter event.
+        Args
+            event (tk.Event): tkinter event.
         """
         # ensure that the canvas is not moving as well:
         self.canvas.model_elements_are_moving = True
@@ -389,9 +344,8 @@ class Node(TextBox):
         """
         Move node on left-click-drag
 
-        Parameters
-        ----------
-            event: tkinter event.
+        Args
+            event (tk.Event): tkinter event.
         """
         # ensure that the canvas is not moving as well:
         self.canvas.model_elements_are_moving = False
@@ -401,9 +355,8 @@ class Node(TextBox):
         """
         Move node on left-click-drag
 
-        Parameters
-        ----------
-            event: tkinter event.
+        Args
+            event (tk.Event): tkinter event.
         """
         if self.drag_data is None:
             # this is just a backup in case the drag_data is not correctly
@@ -426,28 +379,55 @@ class Node(TextBox):
         self.move(delta_x=delta_x, delta_y=delta_y)
         self.drag_data = {"x": event.x, "y": event.y}
 
+    def on_enter(self, event: tk.Event) -> None:
+        """
+        Change color of node when hovering over it in arrow drawing mode
+
+        Args
+            event (tk.Event): tkinter event.
+        """
+        if self.canvas.drawing_arrow:
+            if self.allowed_connections(
+                predictors_node=self.canvas.arrow_start_node,
+                dependents_node=self.node_id,
+                all_nodes=self.canvas.nodes,
+            ):
+                self.canvas.itemconfig(self.shape_id, fill=self.node_color["allowed"])
+            else:
+                self.canvas.itemconfig(
+                    self.shape_id, fill=self.node_color["not allowed"]
+                )
+
+    def on_leave(self, event: tk.Event) -> None:
+        """
+        Change color of node back to normal when leaving it in arrow drawing mode
+
+        Args
+            event (tk.Event): tkinter event.
+        """
+        self.canvas.itemconfig(self.shape_id, fill=self.node_color["default"])
+
     def save(self) -> dict[str, str]:
         """
         Save the node to a dictionary that allows reproducing the node.
 
-        Returns
-        -------
-        Returns a dictionary with
+        Returns:
+            Returns a dictionary with
 
-        id: int
-            The numeric id of the object on the canvas
-        label: string
-            The label of the node
-        position: list
-            x and y position of the node
-        predictors: list
-            list with labels of predictors
-        dependents: list
-            list with labels of outcomes
-        scale: string
-            scale type of the node
-        r2: float
-            R squared
+            id: int
+                The numeric id of the object on the canvas
+            label: string
+                The label of the node
+            position: list
+                x and y position of the node
+            predictors: list
+                list with labels of predictors
+            dependents: list
+                list with labels of outcomes
+            scale: string
+                scale type of the node
+            r2: float
+                R squared
         """
 
         predictor_arrows = [
@@ -486,12 +466,9 @@ def create_label(nodes: list[Node], base: str = "var_") -> str:
 
     Nodes must have unique labels. This function generates a valid label for a new node.
 
-    Parameters
-    ----------
-    base : string
-        base specifies the first par of the label. The default is "var_"
-    nodes : list
-        List with all nodes contained in the canvas
+    Args:
+        nodes (list[Node]): List with all nodes contained in the canvas
+        base (string): base specifies the first par of the label. The default is "var_"
     """
     for i in range(1, 1000):
         new_label = f"{base}{i}"
@@ -506,12 +483,9 @@ def check_label(new_label: str, nodes: list[Node]) -> bool:
 
     Nodes must have unique labels. This function checks if a suggested label is valid.
 
-    Parameters
-    ----------
-    new_label : string
-        Suggested new node label
-    nodes : list
-        List with all nodes contained in the canvas
+    Args:
+    new_label (str): Suggested new node label
+    nodes (list[Node]): List with all nodes contained in the canvas
     """
     for nd in nodes:
         if new_label == nd.get_label():
@@ -520,21 +494,15 @@ def check_label(new_label: str, nodes: list[Node]) -> bool:
 
 
 class NodeMenu(tk.Menu):
-    """
-    A custom menu class for nodes. The menu will be shown when right-clicking on a node.
+    """NodeMenu is a right-click menu for nodes. It allows adding paths, renaming nodes, and deleting nodes."""
 
-    Parameters:
-    - canvas: The canvas object associated with the menu.
-    - type: The type of the node.
-    - node_id: The ID of the node.
+    def __init__(self, canvas: "EdnoCanvas", node_id: int) -> None:
+        """_summary_
 
-    Attributes:
-    - canvas: The canvas object associated with the menu.
-    - type: The type of the node.
-    - node_id: The ID of the node.
-    """
-
-    def __init__(self, canvas: "EdnoCanvas", type: str, node_id: int) -> None:
+        Args:
+            canvas (EdnoCanvas): EdnoCanvas that contains the node. Necessary to show the menu.
+            node_id (int): Id of the node. Necessary to remove, etc the node.
+        """
         self.canvas = canvas
         self.node_id = node_id
         super().__init__(canvas, tearoff=0)
@@ -556,6 +524,7 @@ class NodeMenu(tk.Menu):
             node_position[1],
             width=2,
             arrow=tk.LAST,
+            fill=self.canvas.arrow_color,
         )
         self.canvas.tag_lower(self.canvas.temporary_arrow)
         self.canvas.drawing_arrow = True
@@ -590,9 +559,6 @@ class NodeMenu(tk.Menu):
     def delete(self) -> None:
         """
         Delete the node from the canvas.
-
-        Returns:
-            None
         """
         [nd.delete() for nd in self.canvas.nodes if nd.node_id == self.node_id]
 

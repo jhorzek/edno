@@ -48,43 +48,7 @@ class Estimate(TextBox):
 
 
 class Arrow:
-    """
-    Represents a directed connection between nodes.
-
-    Attributes
-    ----------
-    canvas : EdnoCanvas
-        The canvas where the arrow will be added.
-    id : int
-        The canvas-id of the arrow. This id will uniquely identify the arrow in the canvas object.
-    dependents_id : int
-        The canvas-id of the node that the arrow has its origin in (the predictor).
-    predictors_id : int
-        The canvas-id of the node where the arrow has its head (the dependent).
-    additional_information: dict
-        Optional dict to store additional information (e.g., the name of an arrow, ...)
-
-    Methods
-    -------
-    direction() -> list[float]:
-        Get the direction of the arrow. The direction is not normalized.
-    length() -> float:
-        Get the length of the arrow.
-    get_line_center() -> list[float]:
-        Compute x and y coordinates of the center of the line.
-    add_estimate() -> None:
-        Add a text field in the center of the line.
-    set_estimate(est: float, sig: str) -> None:
-        Specify the estimate and significance level for a path (arrow).
-    context_menu_show(event: tk.Event) -> None:
-        Show the arrow's context menu on right click.
-    move(delta_x1: float, delta_y1: float, delta_x2: float, delta_y2: float) -> None:
-        Move the arrow in space.
-    delete() -> None:
-        Remove the arrow from the canvas.
-    save() -> dict[str, float]:
-        Save the arrow to a dictionary that allows reproducing the arrow.
-    """
+    """Arrows connect nodes in the model. The arrow can be used to show the direction of the relationship between the nodes. The arrow can also display the estimate and significance of the relationship."""
 
     def __init__(
         self,
@@ -97,18 +61,19 @@ class Arrow:
         arrow_color="#000000",
         additional_information: None | dict[Any, Any] = None,
     ) -> None:
+        """Initialize an Arrow object. Note: The class expects that a line has already been added to the canvas. Given the line id, this class will add an arrow head as well as additional information (e.g., on predictors and dependents).
+
+        Args:
+            canvas (EdnoCanvas): The canvas where the arrow is drawn.
+            id (int): The canvas-id of the arrow. This id uniquely identifies the arrow in the canvas object
+            dependents_id (int): The canvas-id of the node where the arrow has its head (the dependent)
+            predictors_id (int): The canvas-id of the node that the arrow has its origin in (the predictor)
+            font (tuple, optional): The font of the estimate shown on the arrow. Defaults to ("Arial", 9).
+            font_color (str, optional): The color of the estimate. Defaults to "#000000".
+            arrow_color (str, optional): The color of the arrow. Defaults to "#000000".
+            additional_information (None | dict[Any, Any], optional): Optional additional information saved with the arrow. Defaults to None.
         """
-        Parameters
-        ----------
-        canvas : Canvas
-            The canvas where the arrow will be added
-        id : int
-            The canvas-id of the arrow. This id will uniquely identify the arrow in the canvas object
-        dependents_id : int
-            The canvas-id of the node that the arrow has its origin in (the predictor)
-        predictors_id : int
-            The canvas-id of the node where the arrow has its head (the dependent)
-        """
+
         self.canvas = canvas
         self.id = id
         self.font = font
@@ -132,12 +97,10 @@ class Arrow:
         self.canvas.tag_bind(self.id, "<Button-3>", self.context_menu_show)
 
     def direction(self) -> list[float]:
-        """
-        Get the direction of the arrow. The direction is not normalized
+        """Direction of the arrow
 
-        Returns
-        -------
-        A list with x and y direction
+        Returns:
+            list[float]: A list with x and y coordinates of the direction of the arrow. Not normalized.
         """
         line_coord = self.canvas.coords(self.id)
         # get direction
@@ -147,9 +110,8 @@ class Arrow:
         """
         Get the length of the arrow.
 
-        Returns
-        -------
-        A double
+        Returns:
+            float: length of the arrow
         """
         line_dir = self.direction()
         # get line length
@@ -160,10 +122,8 @@ class Arrow:
         """
         Compute x and y coordinates of the center of the line
 
-        Returns
-        -------
-        list[float]
-            A list containing the x and y coordinates of the center of the line.
+        Returns:
+            list[float]: A list containing the x and y coordinates of the center of the line.
         """
         line_coord = self.canvas.coords(self.id)
         # get line center
@@ -173,10 +133,7 @@ class Arrow:
         return [x, y]
 
     def add_estimate(self) -> None:
-        """Add a text field in the center of the line.
-
-        This text field can be filled with the estimate using set_estimate.
-        """
+        """Add a text field in the center of the line. This text field can be filled with the estimate using set_estimate."""
         # we will draw the estimate at the center of the line
         line_center = self.get_line_center()
         self.estimate = Estimate(
@@ -191,15 +148,11 @@ class Arrow:
         self.estimate.hide()
 
     def set_estimate(self, est: float, sig: str):
-        """
-        Specify the estimate and significance level for a path (arrow).
+        """Specify the estimate and significance level for a path (arrow).
 
-        Parameters
-        ----------
-        est : float
-            The estimate
-        sig : string
-            string specifying the significance level (e.g., "*")
+        Args:
+            est (float): The estimate
+            sig (str): string specifying the significance level (e.g., "*")
         """
         if est != "":
             self.estimate.value = est
@@ -213,16 +166,10 @@ class Arrow:
             self.estimate.hide()
 
     def context_menu_show(self, event: tk.Event) -> None:
-        """
-        Show the arrows context menu on right click. This menu will allow for deleting arrows, etc.
+        """Show the arrows context menu on right click. This menu will allow for deleting arrows, etc.
 
-        Parameters
-        ----------
+        Args:
             event (tk.Event): Tkinter event object containing information about the location of the click.
-
-        Returns
-        -------
-            None
         """
         if self.canvas.context_menu is None:
             self.canvas.context_menu = self.context_menu
@@ -238,28 +185,19 @@ class Arrow:
     def move(
         self, delta_x1: float, delta_y1: float, delta_x2: float, delta_y2: float
     ) -> None:
-        """
-        Move the arrow in space.
+        """Move the arrow in space.
 
         The location of a line on the canvas is given by two points: the start point [x1,y1] and
         the end point [x2,y2]. The arrow will show in the direction of the end point.
         move() adjusts both of these points.
 
-        Parameters
-        ----------
-        delta_x1 : float
-            Change in x1
-        delta_y1 : float
-            Change in y1
-        delta_x2 : float
-            Change in x2
-        delta_y2 : float
-            Change in y2
-
-        Returns
-        -------
-            Nothing
+        Args:
+            delta_x1 (float): Change in x1
+            delta_y1 (float): Change in y1
+            delta_x2 (float): Change in x2
+            delta_y2 (float): Change in y2
         """
+
         location = self.canvas.coords(self.id)
         self.canvas.coords(
             self.id,
@@ -293,22 +231,20 @@ class Arrow:
         """
         Save the arrow to a dictionary that allows reproducing the arrow.
 
-        Returns
-        -------
-        Returns a dictionary with
-
-        id: int
-            The numeric id of the object on the canvas
-        estimate: float
-            The parameter estimate
-        significance: string
-            Stars indicating significance
-        position: list[int]
-            x and y positions of the arrow
-        predictors: string
-            label of the predictor
-        dependents: string
-            label of the of outcome
+        Returns:
+            Returns a dictionary with
+            id: int
+                The numeric id of the object on the canvas
+            estimate: float
+                The parameter estimate
+            significance: string
+                Stars indicating significance
+            position: list[int]
+                x and y positions of the arrow
+            predictors: string
+                label of the predictor
+            dependents: string
+                label of the of outcome
         """
 
         arrow_dict = {
@@ -333,21 +269,19 @@ def find_line_ellipse_intersection(
     ellipse_width: float | int,
     line_start: list[float | int],
 ) -> list[float]:
-    """
-    Finds the point that is on an ellipse for a line that ends at the
+    """Finds the point that is on an ellipse for a line that ends at the
     center of the ellipse.
 
-    Parameters:
-    -------------------
-    ellipse_center: list with x and y location of the center of the ellipse
-    ellipse_height: height of ellipse
-    ellipse_width: width of ellipse
-    line_start: list with x and y location of the start of the line
+    Args:
+        ellipse_center (list[float | int]): list with x and y location of the center of the ellipse
+        ellipse_height (float | int): height of ellipse
+        ellipse_width (float | int): width of ellipse
+        line_start (list[float | int]): list with x and y location of the meeting point of line and ellipse
 
     Returns:
-    ------------------
-    list with x and y location of the meeting point of line and ellipse
+        list[float]: _description_
     """
+
     h: float
     k: float
     p1: float
@@ -373,8 +307,7 @@ def find_line_ellipse_intersection(
 def find_segment_intersection(
     segment_1: list[float], segment_2: list[float]
 ) -> list[float] | None:
-    """
-    Finds the intersection point between two line segments.
+    """Finds the intersection point between two line segments.
 
     Args:
         segment_1 (list[float]): The coordinates of the first line segment in the format [x1, y1, x2, y2].
@@ -429,8 +362,7 @@ def find_segment_intersection(
 def find_line_rectangle_intersection(
     line_coords: list[float], rectangle_coords: list[float]
 ) -> list[float]:
-    """
-    Finds the intersection point between a line and a rectangle.
+    """Finds the intersection point between a line and a rectangle.
 
     Assumed coords of the rectangle:
     x1, y2 ------- x2, y2
@@ -443,7 +375,6 @@ def find_line_rectangle_intersection(
 
     Returns:
         list[float]: The coordinates of the intersection point in the format [x, y].
-
     """
 
     rectangle_segments = [
@@ -493,19 +424,20 @@ class ArrowHead:
         dependent_id: int,
         arrow_color: str = "#00000",
     ) -> None:
-        """
-        Initialize an Arrow object.
+        """_summary_
 
         Args:
             canvas (EdnoCanvas): The canvas object on which the arrow will be drawn.
             line_id (int): The ID of the line associated with the arrow.
             predictor_id (int): The ID of the predictor node.
             dependent_id (int): The ID of the dependent node.
+            arrow_color (str, optional): _description_. Defaults to "#00000".
 
         Raises:
             ValueError: If the number of predictor nodes is not equal to 1.
             ValueError: If the number of dependent nodes is not equal to 1.
         """
+
         self.canvas = canvas
         self.line_id = line_id
         # get the predictor and the dependent location
@@ -528,13 +460,14 @@ class ArrowHead:
         self.canvas.tag_lower(self.arrow_id)
 
     def get_target_coords(self) -> list[float]:
-        """
-        Compute the target coordinates of the arrow head based on the predictor node
+        """Compute the target coordinates of the arrow head based on the predictor node
         and the dependent node.
 
-        Returns
-        -------
-        - List with 6 coordinates for polygon
+        Raises:
+            ValueError: Raises error if the shape of the dependent node is not ellipse or rectangle.
+
+        Returns:
+            list[float]: List with 6 coordinates for polygon
         """
         x1, y1 = self.predictor_node[0].get_location()
         # get coordinates of target shape s:

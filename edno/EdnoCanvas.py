@@ -60,48 +60,9 @@ def disallow_self_and_existing(predictors_node, dependents_node, all_nodes) -> b
 
 
 class EdnoCanvas(tk.Canvas):
-    """
-    A custom canvas widget for interactive, directed graphs.
+    """A custom canvas widget for interactive, directed graphs.
 
     This canvas provides functionality for drawing nodes, arrows, scrolling, and zooming.
-
-    Args:
-        form_names: dict[str, str]
-            Specifies what the rectangles and ellipse are called on the canvas.
-        nodes : list[Node]
-            A list of Node objects representing the nodes in the canvas.
-        arrows : list[Arrow]
-            A list of Arrow objects representing the arrows in the canvas.
-        drawing_arrow : bool
-            Indicates whether the canvas is currently in arrow drawing mode.
-        arrow_start_node : Node or None
-            The starting node of the arrow being drawn, or None if no arrow is being drawn.
-        context_menu : CanvasContextMenu or None
-            The context menu currently open in the canvas, or None if no menu is open.
-        canvas_context_menu : CanvasContextMenu
-            The context menu for the canvas.
-        model_elements_are_moving : bool
-            Indicates whether the model elements (nodes, arrows) are currently being moved.
-        scale_factor : float
-            The current scale factor for zooming.
-        font : float
-            The current font for text elements in the canvas.
-
-    Returns:
-        __init__(self, root: ctk.CTk, **kwargs) -> None:
-            Initialize a new EdnoCanvas.
-
-        start_scroll(self, event: tk.Event) -> None:
-            Initialize scrolling in the canvas.
-
-        do_scroll(self, event: tk.Event) -> None:
-            Perform scrolling in the canvas.
-
-        zoom(self, event: tk.Event) -> None:
-            Zoom in and out of the canvas.
-
-        reset(self) -> None:
-            Reset the entire canvas by removing existing objects.
     """
 
     def __init__(
@@ -119,28 +80,17 @@ class EdnoCanvas(tk.Canvas):
         allowed_connections: Callable = disallow_self_and_existing,
         **kwargs,
     ) -> None:
+        """Initialize a new EdnoCanvas.
+
+        Args:
+            root (ctk.CTk): The ctk.CTk root object to which the EdnoCanvas should be added.
+            form_names (_type_, optional): Specifies what the rectangles and ellipse are called on the canvas. For example, {"rectangle": "manifest", "ellipse": "latent"} specifies that the rectangles will be called manifest variables and the ellipse will be called latent variables. Defaults to {"rectangle": "rectangle", "ellipse": "ellipse"}.
+            font (tuple, optional). Font used on the canvas. Defaults to ("Arial", 9).
+            font_color (str, optional): Color of the text. Defaults to "#000000".
+            node_color (_type_, optional): Color of nodes. Expects a dict with three keys: "default", "allowed", "not allowed". A default color for nodes, a color for allowed connections, and a color for disallowed connections. Defaults to { "default": "#ADD8E6", "allowed": "#90E4C1", "not allowed": "#ffcccb", }.
+            arrow_color (str, optional): Color of all arrows. Defaults to "#000000".
+            allowed_connections (Callable, optional): Callable  with signature (predictors_node, dependents_node, all_nodes) -> bool. This function will be called each time a user tries to connect two nodes. If the function returns True, the connection will be allowed, otherwise not. If the user hovers over a node, the color of the node will change to the allowed color if the connection is allowed, otherwise to the not allowed color. Defaults to disallow_self_and_existing.
         """
-        Initialize a new EdnoCanvas.
-
-        Parameters
-        ----------
-        root : ctk.CTk
-            The ctk.CTk root object to which the EdnoCanvas should be added.
-        form_names: dict[str, str]
-            Specifies what the rectangles and ellipse are called on the canvas. For example,
-            {"rectangle": "manifest", "ellipse": "latent"} specifies that the rectangles will be called manifest variables and the ellipse will be called latent variables.
-        font : tuple with font name and font size
-        font_color: str with the color of all text elements
-        node_color : dict[str, str] with keys "default", "allowed", "not allowed". default color for nodes, color for allowed connections, color for not allowed connections
-        arrow_color : str with the color of all arrows
-        allowed_connections : Callable  with signature (predictors_node, dependents_node, all_nodes) -> bool. This function will be called each time a user tries to connect two nodes. If the function returns True, the connection will be allowed, otherwise not. If the user hovers over a node, the color of the node will change to the allowed color if the connection is allowed, otherwise to the not allowed color.
-        **kwargs : optional
-            Additional arguments passed to ctk.CTk.
-
-        Returns:
-            None
-        """
-
         super().__init__(root, kwargs)
 
         self.form_names = form_names
@@ -187,17 +137,10 @@ class EdnoCanvas(tk.Canvas):
         self.font = font
 
     def start_scroll(self, event: tk.Event) -> None:
-        """
-        Initialize scrolling in the canvas.
+        """Initialize scrolling in the canvas.
 
-        Parameters
-        ----------
-        event : tk.Event
-            The tkinter event that tells us the coordinates we are moving towards.
-
-        Returns
-        -------
-        None
+        Args:
+            event (tk.Event): The tkinter event that tells us the coordinates we are moving towards.
         """
 
         # when starting to scroll, close menus
@@ -209,14 +152,8 @@ class EdnoCanvas(tk.Canvas):
         """
         Perform scrolling in the canvas.
 
-        Parameters
-        ----------
-        event : tk.Event
-            The tkinter event that tells us the coordinates we are moving towards.
-
-        Returns
-        -------
-        None
+        Args:
+            event (tk.Event): The tkinter event that tells us the coordinates we are moving towards.
         """
         if not self.model_elements_are_moving:
             self.scan_dragto(event.x, event.y, gain=1)
@@ -225,14 +162,8 @@ class EdnoCanvas(tk.Canvas):
         """
         Zoom in and out of the canvas.
 
-        Parameters
-        ----------
-        event : tk.Event
-            The tkinter event that tells us if we are scrolling in or out.
-
-        Returns
-        -------
-        None
+        Args:
+            event (tk.Event): The tkinter event that tells us if we are scrolling in or out.
         """
         if event.num == 4 or event.delta > 0:
             factor = 1.1
@@ -263,6 +194,11 @@ class EdnoCanvas(tk.Canvas):
             arrow.arrow_head.update()
 
     def update_temporary_arrow(self, event: tk.Event) -> None:
+        """Makes the temporary arrow follow the cursor.
+
+        Args:
+            event (tk.Event): Tkinter event that tells us the current position of the cursor.
+        """
         if self.drawing_arrow:
             mouse_position = [self.canvasx(event.x), self.canvasy(event.y)]
             self.coords(
@@ -274,14 +210,12 @@ class EdnoCanvas(tk.Canvas):
             )
 
     def get_connections(self) -> list[dict]:
-        """
-        Get all connections between nodes.
+        """Get all connections between nodes.
 
-        Returns
-        -------
-        list[dict]
-            A list of dictionaries representing the connections between nodes.
+        Returns:
+            list[dict]: A list of dictionaries representing the connections between nodes.
         """
+
         connections = []
         for arrow in self.arrows:
             connections.append(arrow.save())
@@ -291,10 +225,8 @@ class EdnoCanvas(tk.Canvas):
         """
         Get all connections between nodes.
 
-        Returns
-        -------
-        dict
-            A dictionary representing the connections between nodes.
+        Returns:
+            dict: A dictionary representing the connections between nodes.
         """
         node_connections = {}
         for node in self.nodes:

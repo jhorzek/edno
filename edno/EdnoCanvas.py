@@ -72,7 +72,11 @@ class EdnoCanvas(tk.Canvas):
         root: ctk.CTk,
         form_names: dict[str, str] = {"rectangle": "rectangle", "ellipse": "ellipse"},
         font=("Arial", 9),
-        node_color="#cfcfcf",
+        node_color: dict[str, str] = {
+            "default": "#ADD8E6",
+            "allowed": "lightgreen",
+            "not allowed": "lightred",
+        },
         allowed_connections: Callable = disallow_self_loops,
         **kwargs,
     ) -> None:
@@ -341,7 +345,6 @@ class CanvasContextMenu:
                 allowed_connections=self.canvas.allowed_connections,
                 shape="ellipse",
                 font=self.canvas.font,
-                node_color=self.canvas.node_color,
             )
         )
         self.canvas.context_menu = None

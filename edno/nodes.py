@@ -49,7 +49,6 @@ class R2(TextBox):
         text: str,
         font=("Arial", 9),
         box_shape: str = "rectangle",
-        box_color: str = "#faf9f6",
         value: float | None = None,
     ) -> None:
 
@@ -60,7 +59,7 @@ class R2(TextBox):
             text=text,
             font=font,
             box_shape=box_shape,
-            box_color=box_color,
+            box_color=canvas["background"],
         )
         self.value = value
 
@@ -135,7 +134,11 @@ class Node(TextBox):
         allowed_connections: Callable = allow_all_connections,
         additional_information: None | dict[Any, Any] = None,
         font=("Arial", 9),
-        node_color: str = "#cfcfcf",
+        node_color: dict[str, str] = {
+            "default": "#ADD8E6",
+            "allowed": "#90E4C1",
+            "not allowed": "#ffcccb",
+        },
     ) -> None:
         """
         Parameters
@@ -154,6 +157,7 @@ class Node(TextBox):
         self.shape = shape
         self.font = font
         self.allowed_connections = allowed_connections
+        self.node_color = node_color
 
         if label == "":
             label = create_label(canvas.nodes)
@@ -164,7 +168,7 @@ class Node(TextBox):
             y=y,
             text=label,
             box_shape=shape,
-            box_color=node_color,
+            box_color=node_color["default"],
             space_around=10,
             font=self.font,
         )
@@ -192,7 +196,6 @@ class Node(TextBox):
             y=bbox[3] + 25,
             text="",
             font=self.font,
-            box_color="#faf9f6",
             value=None,
         )
         self.r2.hide()
@@ -230,6 +233,9 @@ class Node(TextBox):
         # Add right click menu
         self.canvas.tag_bind(self.text_id, "<Button-3>", self.context_menu_show)
         self.canvas.tag_bind(self.shape_id, "<Button-3>", self.context_menu_show)
+        # Hover effect: Used to chage color of the node when hovering over it in arrow drawing mode
+        self.canvas.tag_bind(self.text_id, "<Enter>", self.on_enter)
+        self.canvas.tag_bind(self.text_id, "<Leave>", self.on_leave)
 
     def context_menu_show(self, event: tk.Event) -> None:
         """
@@ -425,6 +431,36 @@ class Node(TextBox):
 
         self.move(delta_x=delta_x, delta_y=delta_y)
         self.drag_data = {"x": event.x, "y": event.y}
+
+    def on_enter(self, event: tk.Event) -> None:
+        """
+        Change color of node when hovering over it in arrow drawing mode
+
+        Parameters
+        ----------
+            event: tkinter event.
+        """
+        if self.canvas.drawing_arrow:
+            if self.allowed_connections(
+                predictors_node=self.canvas.arrow_start_node,
+                dependents_node=self.node_id,
+                all_nodes=self.canvas.nodes,
+            ):
+                self.canvas.itemconfig(self.shape_id, fill=self.node_color["allowed"])
+            else:
+                self.canvas.itemconfig(
+                    self.shape_id, fill=self.node_color["not allowed"]
+                )
+
+    def on_leave(self, event: tk.Event) -> None:
+        """
+        Change color of node back to normal when leaving it in arrow drawing mode
+
+        Parameters
+        ----------
+            event: tkinter event.
+        """
+        self.canvas.itemconfig(self.shape_id, fill=self.node_color["default"])
 
     def save(self) -> dict[str, str]:
         """

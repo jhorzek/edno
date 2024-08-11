@@ -2,6 +2,22 @@ import tkinter as tk
 from .nodes import Node
 from .arrow import Arrow
 import customtkinter as ctk
+from typing import Callable
+
+
+def disallow_self_loops(predictors_node, dependents_node, all_nodes) -> bool:
+    """
+    Allow all connection except for self-loops.
+
+    Args:
+        predictors_node (Node): The node that is the predictor.
+        dependents_node (Node): The node that is the dependent.
+        all_nodes (list[Node]): A list of all nodes in the canvas.
+
+    Returns:
+        bool: True if connection is allowed
+    """
+    return predictors_node != dependents_node
 
 
 class EdnoCanvas(tk.Canvas):
@@ -57,6 +73,7 @@ class EdnoCanvas(tk.Canvas):
         form_names: dict[str, str] = {"rectangle": "rectangle", "ellipse": "ellipse"},
         font=("Arial", 9),
         node_color="#cfcfcf",
+        allowed_connections: Callable = disallow_self_loops,
         **kwargs,
     ) -> None:
         """
@@ -81,6 +98,7 @@ class EdnoCanvas(tk.Canvas):
 
         self.form_names = form_names
         self.node_color = node_color
+        self.allowed_connections = allowed_connections
 
         # initialize nodes
         self.nodes: list[Node] = []
@@ -320,6 +338,7 @@ class CanvasContextMenu:
                 x=self.canvas.context_menu.position[0],
                 y=self.canvas.context_menu.position[1],
                 type=self.form_names["ellipse"],
+                allowed_connections=self.canvas.allowed_connections,
                 shape="ellipse",
                 font=self.canvas.font,
                 node_color=self.canvas.node_color,
@@ -338,6 +357,7 @@ class CanvasContextMenu:
                 x=self.canvas.context_menu.position[0],
                 y=self.canvas.context_menu.position[1],
                 type=self.form_names["rectangle"],
+                allowed_connections=self.canvas.allowed_connections,
                 shape="rectangle",
                 font=self.canvas.font,
                 node_color=self.canvas.node_color,

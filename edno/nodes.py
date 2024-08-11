@@ -132,8 +132,9 @@ class Node(TextBox):
         y: int,
         type: str,
         shape: str,
+        allowed_connections: Callable = allow_all_connections,
         additional_information: None | dict[Any, Any] = None,
-        font = ("Arial", 9),
+        font=("Arial", 9),
         node_color: str = "#cfcfcf",
     ) -> None:
         """
@@ -152,6 +153,7 @@ class Node(TextBox):
         """
         self.shape = shape
         self.font = font
+        self.allowed_connections = allowed_connections
 
         if label == "":
             label = create_label(canvas.nodes)
@@ -164,7 +166,7 @@ class Node(TextBox):
             box_shape=shape,
             box_color=node_color,
             space_around=10,
-            font = self.font
+            font=self.font,
         )
         # the node id uniquely identifies the entire node. It is identical to the
         # text id
@@ -228,7 +230,6 @@ class Node(TextBox):
         # Add right click menu
         self.canvas.tag_bind(self.text_id, "<Button-3>", self.context_menu_show)
         self.canvas.tag_bind(self.shape_id, "<Button-3>", self.context_menu_show)
-
 
     def context_menu_show(self, event: tk.Event) -> None:
         """
@@ -313,11 +314,7 @@ class Node(TextBox):
             nd for nd in self.canvas.nodes if nd.node_id != self.node_id
         ]
 
-    def draw_arrow(
-        self,
-        event: tk.Event | None,
-        check_connection_allowed: Callable = allow_all_connections,
-    ) -> None:
+    def draw_arrow(self, event: tk.Event | None) -> None:
         """
         Draw an arrow between nodes.
 
@@ -328,7 +325,7 @@ class Node(TextBox):
         if self.canvas.drawing_arrow:
             start_node = self.canvas.arrow_start_node
             end_node = self.node_id
-            if check_connection_allowed(
+            if self.allowed_connections(
                 predictors_node=start_node,
                 dependents_node=end_node,
                 all_nodes=self.canvas.nodes,
@@ -342,9 +339,7 @@ class Node(TextBox):
                 y2 = bbox[1] + 0.5 * (bbox[3] - bbox[1])
 
                 # draw arrow:
-                new_arrow = self.canvas.create_line(
-                    x1, y1, x2, y2
-                )
+                new_arrow = self.canvas.create_line(x1, y1, x2, y2)
                 self.canvas.tag_lower(new_arrow)
                 self.canvas.tag_lower(new_arrow)
                 self.canvas.arrows.append(
@@ -361,6 +356,10 @@ class Node(TextBox):
                 if self.canvas.temporary_arrow is not None:
                     self.canvas.delete(self.canvas.temporary_arrow)
                     self.canvas.temporary_arrow = None
+                tk.messagebox.showerror(
+                    title="Connection not allowed",
+                    message="The connection you selected is not allowed.",
+                )
         for nd in self.canvas.nodes:
             if self.canvas.drawing_arrow:
                 if nd.node_id == start_node:
@@ -555,7 +554,8 @@ class NodeMenu(tk.Menu):
             node_position[1],
             node_position[0],
             node_position[1],
-            width=2, arrow=tk.LAST
+            width=2,
+            arrow=tk.LAST,
         )
         self.canvas.tag_lower(self.canvas.temporary_arrow)
         self.canvas.drawing_arrow = True

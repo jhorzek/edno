@@ -2,6 +2,22 @@ import tkinter as tk
 from .nodes import Node
 from .arrow import Arrow
 import customtkinter as ctk
+from typing import Callable
+
+
+def disallow_self_loops(predictors_node, dependents_node, all_nodes) -> bool:
+    """
+    Allow all connection except for self-loops.
+
+    Args:
+        predictors_node (Node): The node that is the predictor.
+        dependents_node (Node): The node that is the dependent.
+        all_nodes (list[Node]): A list of all nodes in the canvas.
+
+    Returns:
+        bool: True if connection is allowed
+    """
+    return predictors_node != dependents_node
 
 
 class EdnoCanvas(tk.Canvas):
@@ -55,8 +71,9 @@ class EdnoCanvas(tk.Canvas):
         self,
         root: ctk.CTk,
         form_names: dict[str, str] = {"rectangle": "rectangle", "ellipse": "ellipse"},
-        font = ("Arial", 9),
-        node_color = "#cfcfcf",
+        font=("Arial", 9),
+        node_color="#cfcfcf",
+        allowed_connections: Callable = disallow_self_loops,
         **kwargs,
     ) -> None:
         """
@@ -81,6 +98,7 @@ class EdnoCanvas(tk.Canvas):
 
         self.form_names = form_names
         self.node_color = node_color
+        self.allowed_connections = allowed_connections
 
         # initialize nodes
         self.nodes: list[Node] = []
@@ -180,10 +198,13 @@ class EdnoCanvas(tk.Canvas):
         self.configure(scrollregion=self.bbox("all"))
         # find all text elements and rescale
         text_fields = self.find_withtag("text_field")
-        self.font = (self.base_font[0], max(2,int(self.base_font[1] * self.scale_factor)))
+        self.font = (
+            self.base_font[0],
+            max(2, int(self.base_font[1] * self.scale_factor)),
+        )
         for text_field in text_fields:
             self.itemconfigure(text_field, font=self.font)
-        
+
         # The boxes around the text field often do not update correctly, so
         # we need to update them manually
         for node in self.nodes:
@@ -194,10 +215,7 @@ class EdnoCanvas(tk.Canvas):
 
     def update_temporary_arrow(self, event: tk.Event) -> None:
         if self.drawing_arrow:
-            mouse_position = [
-                self.canvasx(event.x),
-                self.canvasy(event.y)
-            ]
+            mouse_position = [self.canvasx(event.x), self.canvasy(event.y)]
             self.coords(
                 self.temporary_arrow,
                 self.coords(self.temporary_arrow)[0],
@@ -205,6 +223,62 @@ class EdnoCanvas(tk.Canvas):
                 mouse_position[0],
                 mouse_position[1],
             )
+
+    def get_connections(self) -> list[dict]:
+        """
+        Get all connections between nodes.
+
+        Returns
+        -------
+        list[dict]
+            A list of dictionaries representing the connections between nodes.
+        """
+        connections = []
+        for arrow in self.arrows:
+            connections.append(arrow.save())
+        return connections
+
+    def get_node_connections(self) -> dict:
+        """
+        Get all connections between nodes.
+
+        Returns
+        -------
+        dict
+            A dictionary representing the connections between nodes.
+        """
+        node_connections = {}
+        for node in self.nodes:
+            # getting the labels of the predictors and dependents is a bit complicated, as each node
+            # only knows about the arrows, but not the predicting / predicted nodes themselves. So,
+            # we need to first find the arrows and then get the labels of the nodes these arrows come from / go to.
+            incoming_arrows_id = [arrow for arrow in node.predictors_arrow_id]
+            outgoing_arrows_id = [arrow for arrow in node.dependents_arrow_id]
+            # given the ids, we can find the actual arrows
+            dependents_ids = [
+                arrow.dependents_id
+                for arrow in self.arrows
+                if arrow.id in outgoing_arrows_id
+            ]
+            predictors_ids = [
+                arrow.predictors_id
+                for arrow in self.arrows
+                if arrow.id in incoming_arrows_id
+            ]
+
+            # finally, arrows know about the nodes the come from and the nodes they point to,
+            # so we can get the labels of the nodes.
+            dependents = [
+                nd.get_label() for nd in self.nodes if nd.node_id in dependents_ids
+            ]
+            predictors = [
+                nd.get_label() for nd in self.nodes if nd.node_id in predictors_ids
+            ]
+            node_connections[node.get_label()] = {
+                "depdentents": dependents,
+                "predictors": predictors,
+            }
+        return node_connections
 
     def reset(self) -> None:
         """
@@ -264,9 +338,10 @@ class CanvasContextMenu:
                 x=self.canvas.context_menu.position[0],
                 y=self.canvas.context_menu.position[1],
                 type=self.form_names["ellipse"],
+                allowed_connections=self.canvas.allowed_connections,
                 shape="ellipse",
-                font = self.canvas.font,
-                node_color = self.canvas.node_color
+                font=self.canvas.font,
+                node_color=self.canvas.node_color,
             )
         )
         self.canvas.context_menu = None
@@ -282,9 +357,10 @@ class CanvasContextMenu:
                 x=self.canvas.context_menu.position[0],
                 y=self.canvas.context_menu.position[1],
                 type=self.form_names["rectangle"],
+                allowed_connections=self.canvas.allowed_connections,
                 shape="rectangle",
                 font=self.canvas.font,
-                node_color = self.canvas.node_color
+                node_color=self.canvas.node_color,
             )
         )
         self.canvas.context_menu = None
@@ -306,8 +382,10 @@ class CanvasContextMenu:
         finally:
             self.canvas.context_menu.grab_release()
             # save position on canvas to add nodes at that position
-            self.canvas.context_menu.position = [self.canvas.canvasx(event.x), 
-                                                 self.canvas.canvasy(event.y)]
+            self.canvas.context_menu.position = [
+                self.canvas.canvasx(event.x),
+                self.canvas.canvasy(event.y),
+            ]
 
     def release_right_click_menu(self, event: tk.Event) -> None:
         """

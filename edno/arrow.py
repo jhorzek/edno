@@ -10,7 +10,7 @@ class Estimate(TextBox):
 
     Args:
         canvas (EdnoCanvas): The canvas on which the estimate will be displayed.
-        text (str): The text to be displayed in the estimate.
+        label (str): The estimate label.
         x (int | float): The x-coordinate of the estimate's position.
         y (int | float): The y-coordinate of the estimate's position.
         font (tuple, optional): The font style of the estimate's text. Defaults to ("Arial", 9).
@@ -22,7 +22,7 @@ class Estimate(TextBox):
     def __init__(
         self,
         canvas: "EdnoCanvas",
-        text: str,
+        label: str,
         x: int | float,
         y: int | float,
         font=("Arial", 9),
@@ -36,15 +36,36 @@ class Estimate(TextBox):
             canvas=canvas,
             x=x,
             y=y,
-            text=text,
+            text=f"{label}={value:.2f}{significance}" if value is not None else label,
             font=font,
             font_color=font_color,
             box_shape="rectangle",
             box_color=box_color,
-            space_around=10,
+            space_around=2,
         )
+        self.label = label
         self.value = value
         self.significance = significance
+
+    def rename(self) -> None:
+        """
+        Change the parameter label.
+
+        This will open a dialog in the GUI for users to rename the nodes
+        """
+        input = ctk.CTkInputDialog(text="Parameter label:", title="Rename Parameter")
+        new_label = input.get_input()  # opens the dialog
+        if (new_label is not None) and (len(new_label) > 0):
+            self.label = new_label
+
+            self.set_text(
+                f"{new_label}={self.value:.2f}{self.significance}"
+                if self.value is not None
+                else self.label
+            )
+
+        # close context menu
+        self.canvas.context_menu = None
 
 
 class Arrow:
@@ -85,6 +106,7 @@ class Arrow:
         self.predictors_id = predictors_id
         self.context_menu = tk.Menu(self.canvas, tearoff=0)
         self.context_menu.add_command(label="Delete", command=self.delete)
+        self.context_menu.add_command(label="Rename", command=self.estimate.rename)
 
         self.arrow_head = ArrowHead(
             canvas=self.canvas,
@@ -140,7 +162,7 @@ class Arrow:
             canvas=self.canvas,
             x=line_center[0],
             y=line_center[1],
-            text="",
+            label="",
             font=self.font,
             font_color=self.font_color,
             box_color="#faf9f6",
@@ -157,12 +179,14 @@ class Arrow:
         if est != "":
             self.estimate.value = est
             self.estimate.significance = sig
-            self.estimate.set_text(f"{est:.2f}{sig}", font=self.font)
+            self.estimate.set_text(
+                f"{self.estimate.label}={est:.2f}{sig}", font=self.font
+            )
             self.estimate.show()
         else:
             self.estimate.value = None
             self.estimate.significance = None
-            self.estimate.set_text("")
+            self.estimate.set_text(self.estimate.label)
             self.estimate.hide()
 
     def context_menu_show(self, event: tk.Event) -> None:
@@ -227,6 +251,10 @@ class Arrow:
         self.canvas.context_menu = None
         self.canvas.arrows = [arr for arr in self.canvas.arrows if arr.id != self.id]
 
+    def update_box(self) -> None:
+        """Update the size of the estimate box"""
+        self.estimate.update_box()
+
     def save(self) -> dict[str, float]:
         """
         Save the arrow to a dictionary that allows reproducing the arrow.
@@ -235,6 +263,8 @@ class Arrow:
             Returns a dictionary with
             id: int
                 The numeric id of the object on the canvas
+            label: str
+                The name of the parameter
             estimate: float
                 The parameter estimate
             significance: string
@@ -249,6 +279,7 @@ class Arrow:
 
         arrow_dict = {
             "id": self.id,
+            "label": self.estimate.text,
             "estimate": self.estimate.value,
             "significance": self.estimate.significance,
             "position": self.canvas.coords(self.id),

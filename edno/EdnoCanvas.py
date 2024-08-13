@@ -192,6 +192,8 @@ class EdnoCanvas(tk.Canvas):
         # the arrow heads also need to be updated
         for arrow in self.arrows:
             arrow.arrow_head.update()
+        for arrow in self.arrows:
+            arrow.update_box()
 
     def update_temporary_arrow(self, event: tk.Event) -> None:
         """Makes the temporary arrow follow the cursor.

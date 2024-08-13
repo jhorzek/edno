@@ -171,6 +171,8 @@ class TestGUI(unittest.TestCase):
                 start_coords[3],
             ],
         )
+        # set estimate
+        self.app.arrows[0].set_estimate(0.5, sig="**")
 
         # save arrow
         save_arrow = self.app.arrows[0].save()
@@ -178,9 +180,33 @@ class TestGUI(unittest.TestCase):
             save_arrow,
             {
                 "id": self.app.arrows[0].id,
+                "text": "0.50**",
                 "label": "",
-                "estimate": None,
-                "significance": None,
+                "estimate": 0.5,
+                "significance": "**",
+                "position": [
+                    start_coords[0] + 3.0,
+                    start_coords[1] + 1.0,
+                    start_coords[2],
+                    start_coords[3],
+                ],
+                "predictors": self.app.nodes[1].get_label(),
+                "dependents": self.app.nodes[0].get_label(),
+            },
+        )
+
+        self.app.arrows[0].estimate.label = "param_1"
+        self.app.arrows[0].estimate.update_text()
+
+        save_arrow = self.app.arrows[0].save()
+        self.assertEqual(
+            save_arrow,
+            {
+                "id": self.app.arrows[0].id,
+                "text": "param_1=0.50**",
+                "label": "param_1",
+                "estimate": 0.5,
+                "significance": "**",
                 "position": [
                     start_coords[0] + 3.0,
                     start_coords[1] + 1.0,

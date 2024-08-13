@@ -36,7 +36,7 @@ class Estimate(TextBox):
             canvas=canvas,
             x=x,
             y=y,
-            text=f"{label}={value:.2f}{significance}" if value is not None else label,
+            text="",
             font=font,
             font_color=font_color,
             box_shape="rectangle",
@@ -46,6 +46,17 @@ class Estimate(TextBox):
         self.label = label
         self.value = value
         self.significance = significance
+        self.update_text()
+
+    def update_text(self) -> None:
+        """Update the text shown on the canvas. This combines the label, value, and significance."""
+        if self.label is not None and self.label != "":
+            text = f"{self.label}={self.value:.2f}{self.significance}"
+        elif (self.label is not None or self.label != "") and self.value is not None:
+            text = f"{self.value:.2f}{self.significance}"
+        else:
+            text = ""
+        self.set_text(text=text)
 
     def rename(self) -> None:
         """
@@ -58,11 +69,7 @@ class Estimate(TextBox):
         if (new_label is not None) and (len(new_label) > 0):
             self.label = new_label
 
-            self.set_text(
-                f"{new_label}={self.value:.2f}{self.significance}"
-                if self.value is not None
-                else self.label
-            )
+            self.update_text()
 
         # close context menu
         self.canvas.context_menu = None
@@ -179,14 +186,12 @@ class Arrow:
         if est != "":
             self.estimate.value = est
             self.estimate.significance = sig
-            self.estimate.set_text(
-                f"{self.estimate.label}={est:.2f}{sig}", font=self.font
-            )
+            self.estimate.update_text()
             self.estimate.show()
         else:
             self.estimate.value = None
             self.estimate.significance = None
-            self.estimate.set_text(self.estimate.label)
+            self.estimate.update_text()
             self.estimate.hide()
 
     def context_menu_show(self, event: tk.Event) -> None:
@@ -263,6 +268,8 @@ class Arrow:
             Returns a dictionary with
             id: int
                 The numeric id of the object on the canvas
+            text: str
+                The text shown on the canvas. Combines label, value, and significance.
             label: str
                 The name of the parameter
             estimate: float
@@ -279,7 +286,8 @@ class Arrow:
 
         arrow_dict = {
             "id": self.id,
-            "label": self.estimate.text,
+            "text": self.estimate.text,
+            "label": self.estimate.label,
             "estimate": self.estimate.value,
             "significance": self.estimate.significance,
             "position": self.canvas.coords(self.id),

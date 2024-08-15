@@ -124,9 +124,6 @@ class Node(TextBox):
             font=self.font,
             font_color=self.font_color,
         )
-        # the node id uniquely identifies the entire node. It is identical to the
-        # text id
-        self.node_id = self.text_id
 
         # dependents_arrow_id and predictors_arrow_id will save the ids of the ARROWS of predictor and
         # dependent nodes
@@ -141,7 +138,7 @@ class Node(TextBox):
 
         # R Squared
         # located below node
-        bbox = self.canvas.bbox(self.text_id)
+        bbox = self.canvas.bbox(self.node_id)
         self.r2 = R2(
             canvas=self.canvas,
             x=bbox[0] + 0.5 * (bbox[2] - bbox[0]),
@@ -174,18 +171,18 @@ class Node(TextBox):
         Add the right-click, left-click, etc. actions to a node.
         """
         # Add moving on drag and drop
-        self.canvas.tag_bind(self.text_id, "<ButtonPress-1>", self.on_start_drag)
+        self.canvas.tag_bind(self.node_id, "<ButtonPress-1>", self.on_start_drag)
         self.canvas.tag_bind(self.shape_id, "<ButtonPress-1>", self.on_start_drag)
-        self.canvas.tag_bind(self.text_id, "<ButtonRelease-1>", self.on_stop_drag)
+        self.canvas.tag_bind(self.node_id, "<ButtonRelease-1>", self.on_stop_drag)
         self.canvas.tag_bind(self.shape_id, "<ButtonRelease-1>", self.on_stop_drag)
-        self.canvas.tag_bind(self.text_id, "<B1-Motion>", self.on_drag)
+        self.canvas.tag_bind(self.node_id, "<B1-Motion>", self.on_drag)
         self.canvas.tag_bind(self.shape_id, "<B1-Motion>", self.on_drag)
         # Add right click menu
-        self.canvas.tag_bind(self.text_id, "<Button-3>", self.context_menu_show)
+        self.canvas.tag_bind(self.node_id, "<Button-3>", self.context_menu_show)
         self.canvas.tag_bind(self.shape_id, "<Button-3>", self.context_menu_show)
         # Hover effect: Used to chage color of the node when hovering over it in arrow drawing mode
-        self.canvas.tag_bind(self.text_id, "<Enter>", self.on_enter)
-        self.canvas.tag_bind(self.text_id, "<Leave>", self.on_leave)
+        self.canvas.tag_bind(self.node_id, "<Enter>", self.on_enter)
+        self.canvas.tag_bind(self.node_id, "<Leave>", self.on_leave)
 
     def context_menu_show(self, event: tk.Event) -> None:
         """
@@ -215,7 +212,7 @@ class Node(TextBox):
             delta_x (float): Change in x
             delta_y (float): Change in y
         """
-        self.canvas.move(self.text_id, delta_x, delta_y)
+        self.canvas.move(self.node_id, delta_x, delta_y)
         self.canvas.move(self.shape_id, delta_x, delta_y)
         self.r2.move(delta_x, delta_y)
 
@@ -251,7 +248,7 @@ class Node(TextBox):
         """
         Delete the node from the canvas
         """
-        self.canvas.delete(self.text_id)
+        self.canvas.delete(self.node_id)
         self.canvas.delete(self.shape_id)
         self.r2.delete()
         self.canvas.context_menu = None

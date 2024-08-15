@@ -33,12 +33,12 @@ class TextBox:
         self.text = text
         self.shape = box_shape
         self.space_around = space_around
-        self.text_id = canvas.create_text(
+        self.node_id = canvas.create_text(
             x, y, text=text, font=font, tags="text_field", fill=font_color
         )
 
         # For the shape, we first determine the outline of the text
-        bbox = canvas.bbox(self.text_id)
+        bbox = canvas.bbox(self.node_id)
         x1, y1, x2, y2 = (
             bbox[0] - space_around,
             bbox[1] - space_around,
@@ -57,7 +57,7 @@ class TextBox:
         else:
             raise ValueError("Shape should be rectangle or ellipse.")
         # put shape behind text
-        self.canvas.tag_lower(self.shape_id, self.text_id)
+        self.canvas.tag_lower(self.shape_id, self.node_id)
 
     def move(self, delta_x, delta_y):
         """Moves the text box by the specified amounts.
@@ -66,7 +66,7 @@ class TextBox:
             delta_x (_type_): The change along the x-axis.
             delta_y (_type_): The change along the y-axis.
         """
-        self.canvas.move(self.text_id, delta_x, delta_y)
+        self.canvas.move(self.node_id, delta_x, delta_y)
         self.canvas.move(self.shape_id, delta_x, delta_y)
 
     def move_to(self, x: int | float, y: int | float) -> None:
@@ -83,7 +83,7 @@ class TextBox:
 
     def delete(self) -> None:
         """Deletes the text box from the canvas."""
-        self.canvas.delete(self.text_id)
+        self.canvas.delete(self.node_id)
         self.canvas.delete(self.shape_id)
 
     def set_text(self, text: str, font: tuple[str, int] = ("Arial", 9)) -> None:
@@ -95,7 +95,7 @@ class TextBox:
             font (tuple[str, int]): The font of the text (default is ("Arial", 12)).
         """
         self.text = text
-        self.canvas.itemconfig(self.text_id, text=self.text, font=font)
+        self.canvas.itemconfig(self.node_id, text=self.text, font=font)
         self.show()
         # update box
         self.update_box()
@@ -103,7 +103,7 @@ class TextBox:
     def update_box(self) -> None:
         # update box
         """Updates the text box to fit the new text size."""
-        bbox = self.canvas.bbox(self.text_id)
+        bbox = self.canvas.bbox(self.node_id)
         x1, y1, x2, y2 = (
             bbox[0] - self.space_around,
             bbox[1] - self.space_around,
@@ -122,11 +122,11 @@ class TextBox:
 
     def hide_text(self) -> None:
         """Hides the text in the text box."""
-        self.canvas.itemconfigure(self.text_id, state="hidden")
+        self.canvas.itemconfigure(self.node_id, state="hidden")
 
     def show_text(self) -> None:
         """Shows the text in the text box."""
-        self.canvas.itemconfigure(self.text_id, state="normal")
+        self.canvas.itemconfigure(self.node_id, state="normal")
 
     def hide_box(self) -> None:
         """Hides the background shape of the text box."""
@@ -153,7 +153,7 @@ class TextBox:
         Returns:
             A list containing the x and y coordinates of the text box.
         """
-        return self.canvas.coords(self.text_id)
+        return self.canvas.coords(self.node_id)
 
     def get_outline(self) -> list[float]:
         """

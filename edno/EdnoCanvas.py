@@ -71,7 +71,8 @@ class EdnoCanvas(tk.Canvas):
         root: ctk.CTk,
         node_classes: dict[str, Callable] = {
             "Ellipse": EllipseNode,
-            "Rectangle": PolyNode_factory(3),
+            "Rectangle": PolyNode_factory(4),
+            "Triangle": PolyNode_factory(3),
         },
         font=("Arial", 9),
         font_color="#000000",

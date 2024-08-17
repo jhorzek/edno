@@ -350,9 +350,6 @@ class ArrowHead:
         """Compute the target coordinates of the arrow head based on the predictor node
         and the dependent node.
 
-        Raises:
-            ValueError: Raises error if the shape of the dependent node is not ellipse or rectangle.
-
         Returns:
             list[float]: List with 2 coordinates for the intersection point
         """

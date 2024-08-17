@@ -5,7 +5,11 @@ from typing import Any
 
 
 def get_polygon_points(
-    x: float, y: float, sides: int, radius: float, magins: float = 1.3
+    x: float,
+    y: float,
+    sides: int,
+    width: float,
+    height: float,
 ) -> list[int]:
     """
     Get the points of a polygon with a given number of sides, radius, and center.
@@ -14,33 +18,77 @@ def get_polygon_points(
         x (float): The x-coordinate of the center of the polygon.
         y (float): The y-coordinate of the center of the polygon.
         sides (int): The number of sides of the polygon.
-        radius (float): The radius of the polygon.
-        magins (float): The polygon is based on a circle. This parameter allows to increase the radius of the circle to make sure that the text fits. Defaults to 5.
+        width (float): The width of the polygon.
+        height (float): The height of the polygon.
 
     Returns:
         list[int]: A list of the x and y coordinates of the points of the polygon.
     """
-    # https://math.stackexchange.com/questions/117164/calculate-coordinates-of-a-regular-polygon
+    # We want all points of the polygon to be outside of the ellipse defined by the width and height.
+    # This ensures that the text will fit in the polygon. The implementation is adapted from
+    # user2554330 at
+    # https://stackoverflow.com/questions/76221986/how-to-approximate-an-ellipse-from-the-exterior
+
     if sides < 3:
         raise ValueError("A polygon must have at least 3 sides.")
 
-    radius = radius * magins
+    if sides == 4:
+        # A rectangle is a special case, as we can calculate the points directly.
+        return [
+            x - 0.5 * width,
+            y - 0.5 * height,
+            x + 0.5 * width,
+            y - 0.5 * height,
+            x + 0.5 * width,
+            y + 0.5 * height,
+            x - 0.5 * width,
+            y + 0.5 * height,
+        ]
 
-    points = []
-    if sides == 3:
-        rotate = math.radians(180)
-    elif sides == 4:
-        rotate = math.radians(45)
+    if sides % 2 == 1:
+        angle = 90
     else:
-        rotate = math.radians(0)
-    for i in range(sides):
-        angle = (2 * math.pi * i) / sides + rotate
-        points.extend(
-            [
-                x + (radius) * math.sin(angle),
-                y + (radius) * math.cos(angle),
-            ]
+        angle = 0.0001
+    # the algorithm uses one element more than there are sides
+    sides += 1
+    angle = math.radians(angle)
+    theta = [(i * 2 * math.pi / (sides - 1)) for i in range(sides)]
+    theta.append(0.0)
+
+    slopes = [
+        (
+            -0.5 * height * math.sin(th) * math.sin(angle)
+            + 0.5 * width * math.cos(th) * math.cos(angle)
         )
+        / (
+            -0.5 * height * math.sin(th) * math.cos(angle)
+            - 0.5 * width * math.cos(th) * math.sin(angle)
+        )
+        for th in theta
+    ]
+
+    crds_0 = [
+        0.5 * height * math.cos(th) * math.cos(angle)
+        - 0.5 * width * math.sin(th) * math.sin(angle)
+        + x
+        for th in theta
+    ]
+    crds_1 = [
+        0.5 * height * math.cos(th) * math.sin(angle)
+        + 0.5 * width * math.sin(th) * math.cos(angle)
+        + y
+        for th in theta
+    ]
+    intercepts = [crds_1[i] - slopes[i] * crds_0[i] for i in range(sides)]
+
+    x_points = [
+        (intercepts[i] - intercepts[i + 1]) / (slopes[i + 1] - slopes[i])
+        for i in range(sides - 1)
+    ]
+    y_points = [slopes[i] * x_points[i] + intercepts[i] for i in range(sides - 1)]
+
+    # combine to x1, y1, x2, y2, ...
+    points = [pt[i] for i in range(sides - 1) for pt in (x_points, y_points)]
     return points
 
 
@@ -99,10 +147,16 @@ class TextBox:
         """
         center = self.get_location()
         text_bbox = self.canvas.bbox(self.node_id)
-        width = text_bbox[2] - text_bbox[0]
+        width = 1.5 * (text_bbox[2] - text_bbox[0])
+        height = 2 * (text_bbox[3] - text_bbox[1])
         polygon_points = get_polygon_points(
-            center[0], center[1], self.polygon_sides, max(width / 2, 30)
+            x=center[0],
+            y=center[1],
+            height=height,
+            width=width,
+            sides=self.polygon_sides,
         )
+
         id = self.canvas.create_polygon(
             polygon_points, fill=self.node_color, tags="shape"
         )
@@ -194,9 +248,14 @@ class TextBox:
         if text_bbox is None:
             # happens if label = ""
             return
-        width = text_bbox[2] - text_bbox[0]
+        width = 1.5 * (text_bbox[2] - text_bbox[0])
+        height = 2 * (text_bbox[3] - text_bbox[1])
         polygon_points = get_polygon_points(
-            center[0], center[1], self.polygon_sides, max(width / 2, 30)
+            x=center[0],
+            y=center[1],
+            height=height,
+            width=width,
+            sides=self.polygon_sides,
         )
         self.canvas.coords(self.shape_id, polygon_points)
 

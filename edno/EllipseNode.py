@@ -15,7 +15,6 @@ class EllipseNode(PolyNode):
         label: str,
         font: tuple[str, int] = ("Arial", 9),
         font_color: str = "#000000",
-        space_around_ellipse: float = 7,
         node_color: dict[str, str] = {
             "default": "#ADD8E6",
             "allowed": "#90E4C1",
@@ -35,15 +34,12 @@ class EllipseNode(PolyNode):
             label (str): The label to be displayed inside the node.
             font (tuple[str, int], optional): The font of the text (default is ("Arial", 12)).
             font_color (str, optional): The color of the text. Defaults to "#000000".
-            space_around_ellipse (float, optional): The space around the ellipse. Defaults to 4.
             node_color (str, optional): The color of the text box (default is #faf9f6).
             arrow_color (str, optional): The color of the arrows. Defaults to "#000000".
             allowed_connections (Callable, optional): this function will be called every time a user tries creating a new node. The function should return False if the user tries to create a non-allowed connection. Defaults to allow_all_connections. See allow_all_connections for the signature of these functions.
             NodeMenuClass (Callable, optional): The right-click menu for the node. Defaults to NodeMenu.
             linked_objects (Any, optional): linked_objects allows linking other objects to the node. This could, for example, be an R squared value that is shown above the node. These objects must implement the following methods: move(delta_x, delta_y), delete(), hide(), show(). Defaults to None.
         """
-
-        self.space_around_ellipse = space_around_ellipse
 
         super().__init__(
             canvas=canvas,
@@ -67,11 +63,13 @@ class EllipseNode(PolyNode):
         """
         # For the shape, we first determine the outline of the text
         x1, y1, x2, y2 = self.canvas.bbox(self.node_id)
+        height = y2 - y1
+        width = x2 - x1
         id = self.canvas.create_oval(
-            x1 - self.space_around_ellipse,
-            y1 - self.space_around_ellipse,
-            x2 + self.space_around_ellipse,
-            y2 + self.space_around_ellipse,
+            x1 - 0.3 * width,
+            y1 - 0.5 * height,
+            x2 + 0.3 * width,
+            y2 + 0.5 * height,
             fill=self.node_color,
             outline=self.node_color,
             tags="shape",
@@ -83,7 +81,15 @@ class EllipseNode(PolyNode):
         # update box
         """Updates the ellipse around the text."""
         x1, y1, x2, y2 = self.canvas.bbox(self.node_id)
-        self.canvas.coords(self.shape_id, x1, y1, x2, y2)
+        height = y2 - y1
+        width = x2 - x1
+        id = self.canvas.coords(
+            self.shape_id,
+            x1 - 0.3 * width,
+            y1 - 0.5 * height,
+            x2 + 0.3 * width,
+            y2 + 0.5 * height,
+        )
 
     def get_line_intersection(self, line_coords: list[float]) -> list[float]:
         """In order to draw an arrow between two nodes, we have to find out where the arrow has to end. In edno, arrows are always drawn from the center of one form to the center of another form. This method is used to find the intersection point of a line that goes through both centers with the the outline of the shape. It is given the coordinates of the line_coords and should return the coordinates of the intersection point."""

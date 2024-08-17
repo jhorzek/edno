@@ -540,9 +540,14 @@ class PolyNode(TextBox):
         # represents a single point
         center = self.get_location()
         text_bbox = self.canvas.bbox(self.node_id)
-        width = text_bbox[2] - text_bbox[0]
+        width = 1.5 * (text_bbox[2] - text_bbox[0])
+        height = 2 * (text_bbox[3] - text_bbox[1])
         polygon_points = get_polygon_points(
-            center[0], center[1], self.polygon_sides, max(width / 2, 30)
+            x=center[0],
+            y=center[1],
+            height=height,
+            width=width,
+            sides=self.polygon_sides,
         )
         poly_points = []
         for i in range(0, len(polygon_points), 2):

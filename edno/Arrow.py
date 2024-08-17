@@ -1,6 +1,6 @@
 import customtkinter as ctk
 import tkinter as tk
-from .text_box import TextBox
+from .TextBox import TextBox
 from typing import Any
 
 
@@ -14,7 +14,7 @@ class Estimate(TextBox):
         x (int | float): The x-coordinate of the estimate's position.
         y (int | float): The y-coordinate of the estimate's position.
         font (tuple, optional): The font style of the estimate's text. Defaults to ("Arial", 9).
-        box_color (str, optional): The color of the estimate's background box. Defaults to "#faf9f6".
+        node_color (str, optional): The color of the estimate's background box. Defaults to "#faf9f6".
         value (float | None, optional): The value of the estimate. Defaults to None.
         significance (str | None, optional): The significance of the estimate. Defaults to None.
     """
@@ -27,7 +27,7 @@ class Estimate(TextBox):
         y: int | float,
         font=("Arial", 9),
         font_color: str = "#000000",
-        box_color="#faf9f6",
+        node_color="#faf9f6",
         value: float | None = None,
         significance: str | None = None,
     ) -> None:
@@ -36,27 +36,27 @@ class Estimate(TextBox):
             canvas=canvas,
             x=x,
             y=y,
-            text="",
+            label="",
             font=font,
             font_color=font_color,
-            box_shape="rectangle",
-            box_color=box_color,
-            space_around=2,
+            node_color=node_color,
         )
-        self.label = label
+        self.parameter_label = label
         self.value = value
         self.significance = significance
         self.update_text()
 
     def update_text(self) -> None:
         """Update the text shown on the canvas. This combines the label, value, and significance."""
-        if self.label is not None and self.label != "":
-            text = f"{self.label}={self.value:.2f}{self.significance}"
-        elif (self.label is not None or self.label != "") and self.value is not None:
+        if self.parameter_label is not None and self.parameter_label != "":
+            text = f"{self.parameter_label}={self.value:.2f}{self.significance}"
+        elif (
+            self.parameter_label is not None or self.parameter_label != ""
+        ) and self.value is not None:
             text = f"{self.value:.2f}{self.significance}"
         else:
             text = ""
-        self.set_text(text=text)
+        self.set_label(label=text)
 
     def rename(self) -> None:
         """
@@ -67,7 +67,7 @@ class Estimate(TextBox):
         input = ctk.CTkInputDialog(text="Parameter label:", title="Rename Parameter")
         new_label = input.get_input()  # opens the dialog
         if (new_label is not None) and (len(new_label) > 0):
-            self.label = new_label
+            self.parameter_label = new_label
 
             self.update_text()
 
@@ -172,7 +172,7 @@ class Arrow:
             label="",
             font=self.font,
             font_color=self.font_color,
-            box_color="#faf9f6",
+            node_color="#faf9f6",
         )
         self.estimate.hide()
 
@@ -258,7 +258,7 @@ class Arrow:
 
     def update_box(self) -> None:
         """Update the size of the estimate box"""
-        self.estimate.update_box()
+        self.estimate.update_shape()
 
     def save(self) -> dict[str, float]:
         """
@@ -286,8 +286,8 @@ class Arrow:
 
         arrow_dict = {
             "id": self.id,
-            "text": self.estimate.text,
-            "label": self.estimate.label,
+            "text": self.estimate.label,
+            "parameter_label": self.estimate.parameter_label,
             "estimate": self.estimate.value,
             "significance": self.estimate.significance,
             "position": self.canvas.coords(self.id),
@@ -300,158 +300,6 @@ class Arrow:
         }
 
         return arrow_dict
-
-
-def find_line_ellipse_intersection(
-    ellipse_center: list[float | int],
-    ellipse_height: float | int,
-    ellipse_width: float | int,
-    line_start: list[float | int],
-) -> list[float]:
-    """Finds the point that is on an ellipse for a line that ends at the
-    center of the ellipse.
-
-    Args:
-        ellipse_center (list[float | int]): list with x and y location of the center of the ellipse
-        ellipse_height (float | int): height of ellipse
-        ellipse_width (float | int): width of ellipse
-        line_start (list[float | int]): list with x and y location of the meeting point of line and ellipse
-
-    Returns:
-        list[float]: _description_
-    """
-
-    h: float
-    k: float
-    p1: float
-    p2: float
-    t: float
-    contact_point: list[float]
-
-    h, k = ellipse_center
-    p1, p2 = line_start
-
-    div = (
-        (ellipse_height**2) * ((k - p2) ** 2) + (ellipse_width**2) * (h - p1) ** 2
-    ) ** 0.5
-
-    if abs(div) < 1e-5:
-        div = 1e-5
-    t = (ellipse_height * ellipse_width) / div
-    contact_point = [h + t * (p1 - h), k + t * (p2 - k)]
-
-    return contact_point
-
-
-def find_segment_intersection(
-    segment_1: list[float], segment_2: list[float]
-) -> list[float] | None:
-    """Finds the intersection point between two line segments.
-
-    Args:
-        segment_1 (list[float]): The coordinates of the first line segment in the format [x1, y1, x2, y2].
-        segment_2 (list[float]): The coordinates of the second line segment in the format [x1, y1, x2, y2].
-
-    Returns:
-        list[float] | None: The intersection point coordinates [x, y] if the segments intersect, None otherwise.
-    """
-
-    [l1_x1, l1_y1, l1_x2, l1_y2] = segment_1
-    [l2_x1, l2_y1, l2_x2, l2_y2] = segment_2
-
-    # There are two divisions that might result in division by zero. We want
-    # to make sure that we never divide by exactly zero
-    div_1 = l1_x1 - l1_x2
-    div_2 = (
-        (l1_x1 - l1_x2) * (l2_y1 - l2_y2)
-        + l1_y1 * (l2_x2 - l2_x1)
-        + l1_y2 * (l2_x1 - l2_x2)
-    )
-    if div_1 == 0.0:
-        # the segment is perfectly vertical. We will replace the difference with a very small value
-        # as we don't need to be too precise here. Note: If we just replace the div_1, we will run
-        # into an annoying issue, where the arrow jumps the the origin of the predictor. Therefore,
-        # we need to actually change l1_x1
-        l1_x1 = l1_x1 + 1
-        div_1 = l1_x1 - l1_x2
-        div_2 = (
-            (l1_x1 - l1_x2) * (l2_y1 - l2_y2)
-            + l1_y1 * (l2_x2 - l2_x1)
-            + l1_y2 * (l2_x1 - l2_x2)
-        )
-    if div_2 == 0.0:
-        # Here, we can just replace the div
-        div_2 = 1.0
-    t = (
-        l1_x1 * (l2_y1 - l1_y2)
-        + l1_y1 * (l1_x2 - l2_x1)
-        - l1_x2 * l2_y1
-        + l1_y2 * l2_x1
-    ) / div_2
-    r = (l1_x1 + (t - 1) * l2_x1 - t * l2_x2) / div_1
-
-    if ((t >= 0) & (t <= 1.0)) & (abs(r) <= 1.0):
-        # segments intersect!
-        intersection = [l1_x1 + r * (l1_x2 - l1_x1), l1_y1 + r * (l1_y2 - l1_y1)]
-        return intersection
-    else:
-        return None
-
-
-def find_line_rectangle_intersection(
-    line_coords: list[float], rectangle_coords: list[float]
-) -> list[float]:
-    """Finds the intersection point between a line and a rectangle.
-
-    Assumed coords of the rectangle:
-    x1, y2 ------- x2, y2
-      |              |
-    x1, y1 ------- x2, y1
-
-    Args:
-        line_coords (list[float]): The coordinates of the line in the format [x1, y1, x2, y2].
-        rectangle_coords (list[float]): The coordinates of the rectangle in the format [x1, y1, x2, y2].
-
-    Returns:
-        list[float]: The coordinates of the intersection point in the format [x, y].
-    """
-
-    rectangle_segments = [
-        [
-            rectangle_coords[0],
-            rectangle_coords[1],
-            rectangle_coords[2],
-            rectangle_coords[1],
-        ],  # x1, y1 ------- x1, y2
-        [
-            rectangle_coords[0],
-            rectangle_coords[3],
-            rectangle_coords[2],
-            rectangle_coords[3],
-        ],  # x1, y2 ------- x2, y2
-        [
-            rectangle_coords[0],
-            rectangle_coords[1],
-            rectangle_coords[0],
-            rectangle_coords[3],
-        ],  # x1, y1 | x1 y2
-        [
-            rectangle_coords[2],
-            rectangle_coords[1],
-            rectangle_coords[2],
-            rectangle_coords[3],
-        ],  # x2, y1 | x2 y2
-    ]
-    for rectangle_segment in rectangle_segments:
-        intersect = find_segment_intersection(line_coords, rectangle_segment)
-        if intersect is not None:
-            return intersect
-    # if we can't find an intersection, the arrow is within the node. We will then just return the
-    # location of the center of the node
-    return [
-        rectangle_coords[0] + 0.5 * (rectangle_coords[2] - rectangle_coords[0]),
-        rectangle_coords[1] + 0.5 * (rectangle_coords[3] - rectangle_coords[1]),
-    ]
 
 
 class ArrowHead:
@@ -506,31 +354,14 @@ class ArrowHead:
             ValueError: Raises error if the shape of the dependent node is not ellipse or rectangle.
 
         Returns:
-            list[float]: List with 6 coordinates for polygon
+            list[float]: List with 2 coordinates for the intersection point
         """
-        x1, y1 = self.predictor_node[0].get_location()
         # get coordinates of target shape s:
-        s_center = self.dependents_node[0].get_location()
-        [s_x1, s_y1, s_x2, s_y2] = self.dependents_node[0].get_outline()
-
-        if self.dependents_node[0].shape == "ellipse":
-            # we want the arrow to end at the collision point of line and
-            # ellipse
-            intersect = find_line_ellipse_intersection(
-                ellipse_center=[s_center[0], s_center[1]],
-                ellipse_height=0.5 * (s_x2 - s_x1),
-                ellipse_width=0.5 * (s_y2 - s_y1),
-                line_start=[x1, y1],
-            )
-        elif self.dependents_node[0].shape == "rectangle":
-            intersect = find_line_rectangle_intersection(
-                line_coords=self.canvas.coords(self.line_id),
-                rectangle_coords=self.canvas.coords(self.dependents_node[0].shape_id),
-            )
-        else:
-            raise ValueError("Expected shape of node to be ellipse or rectangle.")
-
         line_coord = self.canvas.coords(self.line_id)
+        intersect = self.dependents_node[0].get_line_intersection(
+            line_coords=line_coord
+        )
+
         x = intersect[0]
         y = intersect[1]
         # get direction

@@ -123,7 +123,7 @@ class Arrow:
             fill=self.arrow_color,
             arrow=arrow_head,
         )
-        self.canvas.tag_lower(self.id)
+        # self.canvas.tag_lower(self.id)
 
         self.additional_information = additional_information
         self.add_estimate()
@@ -150,7 +150,7 @@ class Arrow:
         x2, y2 = end_node.get_location()
 
         # find intersection point of line between centers and the outline of the shape
-        start_intersection = start_node.get_line_intersection([x1, y1, x2, y2])
+        start_intersection = start_node.get_line_intersection([x2, y2, x1, y1])
         end_intersection = end_node.get_line_intersection([x1, y1, x2, y2])
         return start_intersection + end_intersection
 
@@ -295,6 +295,7 @@ class Arrow:
 
         arrow_dict = {
             "id": self.id,
+            "arrow_type": self.arrow_type,
             "text": self.estimate.label,
             "parameter_label": self.estimate.parameter_label,
             "estimate": self.estimate.value,

@@ -87,26 +87,40 @@ def get_line_line_intersection(
 class NodeMenu(tk.Menu):
     """NodeMenu is a right-click menu for nodes. It allows adding paths, renaming nodes, and deleting nodes."""
 
-    def __init__(self, canvas: "EdnoCanvas", node_id: int) -> None:
+    def __init__(
+        self, canvas: "EdnoCanvas", node_id: int, arrow_types: dict[str, str]
+    ) -> None:
         """_summary_
 
         Args:
             canvas (EdnoCanvas): EdnoCanvas that contains the node. Necessary to show the menu.
             node_id (int): Id of the node. Necessary to remove, etc the node.
+            arrow_types: allowed arrow types.
         """
         self.canvas = canvas
         self.node_id = node_id
         super().__init__(canvas, tearoff=0)
 
-        self.add_command(label="Add Path", command=self.start_connection_mode)
+        for key, value in arrow_types.items():
+            self.add_command(
+                label=f"Add {key}",
+                command=lambda v=value: self.start_connection_mode(arrow_type=v),
+            )
+
         self.add_command(label="Rename Node", command=self.rename)
         self.add_command(label="Delete Node", command=self.delete)
 
-    def start_connection_mode(self) -> None:
+    def start_connection_mode(self, arrow_type) -> None:
         """
         Add a path to a node. This function does not draw the arrow; it just checks if we are
         currently in a drawing-state. If not, it starts the drawing mode and allows adding a path.
         """
+        if arrow_type == "directed":
+            arrow_head = tk.LAST
+        elif arrow_type == "undirected":
+            arrow_head = tk.NONE
+        elif arrow_type == "bidirected":
+            arrow_head = tk.BOTH
         node_position = self.canvas.coords(self.node_id)
         self.canvas.temporary_arrow = self.canvas.create_line(
             node_position[0],
@@ -114,12 +128,13 @@ class NodeMenu(tk.Menu):
             node_position[0],
             node_position[1],
             width=2,
-            arrow=tk.LAST,
+            arrow=arrow_head,
             fill=self.canvas.arrow_color,
         )
         self.canvas.tag_lower(self.canvas.temporary_arrow)
         self.canvas.drawing_arrow = True
         self.canvas.arrow_start_node = self.node_id
+        self.canvas.current_arrow_type = arrow_type
         # close context menu
         self.canvas.context_menu = None
 
@@ -198,6 +213,11 @@ class PolyNode(TextBox):
             "allowed": "#90E4C1",
             "not allowed": "#ffcccb",
         },
+        arrow_types={
+            "Effect": "directed",
+            "Covariance": "bidirected",
+            "Undirected": "undirected",
+        },
         arrow_color: str = "#000000",
         allowed_connections: Callable = allow_all_connections,
         NodeMenuClass: Callable = NodeMenu,
@@ -237,6 +257,7 @@ class PolyNode(TextBox):
 
         self.node_color = node_color
 
+        self.arrow_types = arrow_types
         self.arrow_color = arrow_color
         self.allowed_connections = allowed_connections
 
@@ -268,7 +289,9 @@ class PolyNode(TextBox):
         Args:
             node_menu (Callable, optional): The right-click menu for the node. Defaults to NodeMenu.
         """
-        self.context_menu = NodeMenu(self.canvas, self.node_id)
+        self.context_menu = NodeMenu(
+            self.canvas, self.node_id, arrow_types=self.arrow_types
+        )
         self.canvas.tag_bind(self.node_id, "<Button-3>", self.context_menu_show)
         self.canvas.tag_bind(self.shape_id, "<Button-3>", self.context_menu_show)
 
@@ -442,6 +465,7 @@ class PolyNode(TextBox):
                     self.canvas,
                     predictors_id=start_node_id,
                     dependents_id=end_node_id,
+                    arrow_type=self.canvas.current_arrow_type,
                     arrow_color=self.arrow_color,
                 )
 
@@ -452,6 +476,7 @@ class PolyNode(TextBox):
                 if self.canvas.temporary_arrow is not None:
                     self.canvas.delete(self.canvas.temporary_arrow)
                     self.canvas.temporary_arrow = None
+                    self.canvas.current_arrow_type = None
                 tk.messagebox.showerror(
                     title="Connection not allowed",
                     message="The connection you selected is not allowed.",
@@ -467,6 +492,7 @@ class PolyNode(TextBox):
         if self.canvas.temporary_arrow is not None:
             self.canvas.delete(self.canvas.temporary_arrow)
             self.canvas.temporary_arrow = None
+            self.canvas.current_arrow_type = None
 
     def save(self) -> dict[str, str]:
         """

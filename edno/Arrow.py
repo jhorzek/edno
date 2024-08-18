@@ -40,6 +40,7 @@ class Estimate(TextBox):
             font=font,
             font_color=font_color,
             node_color=node_color,
+            width_height_multiplier=(1.1, 1.1),
         )
         self.parameter_label = label
         self.value = value
@@ -125,15 +126,42 @@ class Arrow:
             arrow_head = tk.NONE
         elif arrow_type == "bidirected":
             arrow_head = tk.BOTH
-        target_coords = self.get_target_coordinates()
-        # draw arrow:
-        self.id = self.canvas.create_line(
-            *target_coords,
-            fill=self.arrow_color,
-            arrow=arrow_head,
-            width=self.canvas.arrow_width,
-            activefill=self.canvas.arrow_color_on_hover,
-        )
+
+        if dependents_id == predictors_id:
+            target_coords = self.canvas.get_node_with_id(
+                dependents_id
+            ).get_self_loop_coords()
+            third_point = get_curved_arrow_points(target_coords[:2], target_coords[2:])
+        else:
+            target_coords = self.get_target_coordinates()
+            third_point = []
+
+        # draw arrow: In case of self-loops we draw a curved line
+        if dependents_id == predictors_id:
+            self.id = self.canvas.create_line(
+                *target_coords[:2],
+                *third_point,
+                *target_coords[2:],
+                fill=self.arrow_color,
+                arrow=arrow_head,
+                width=self.canvas.arrow_width,
+                activefill=self.canvas.arrow_color_on_hover,
+                smooth=True,
+                splinesteps=50,
+            )
+        else:
+            self.id = self.canvas.create_line(
+                *target_coords,
+                fill=self.arrow_color,
+                arrow=arrow_head,
+                width=self.canvas.arrow_width,
+                activefill=self.canvas.arrow_color_on_hover,
+            )
+
+        # bidirected arrows are dotted
+        if arrow_type == "bidirected":
+            self.canvas.itemconfig(self.id, dash=(5, 5))
+
         # self.canvas.tag_lower(self.id)
 
         self.additional_information = additional_information
@@ -198,6 +226,10 @@ class Arrow:
             list[float]: A list containing the x and y coordinates of the center of the line.
         """
         line_coord = self.canvas.coords(self.id)
+        # in case of bidirected arrows, we have to get the center of the curved arrow
+        if len(line_coord) == 6:
+            # curved arrow
+            return line_coord[2:4]
         # get line center
         x = line_coord[0] + 0.5 * (line_coord[2] - line_coord[0])
         y = line_coord[1] + 0.5 * (line_coord[3] - line_coord[1])
@@ -257,11 +289,26 @@ class Arrow:
     def update_position(self) -> None:
         """Update the position of the arrow. This is necessary when the nodes moves."""
 
-        target_coords = self.get_target_coordinates()
-        self.canvas.coords(
-            self.id,
-            *target_coords,
-        )
+        if self.dependents_id == self.predictors_id:
+            target_coords = self.canvas.get_node_with_id(
+                self.dependents_id
+            ).get_self_loop_coords()
+        else:
+            target_coords = self.get_target_coordinates()
+
+        if self.dependents_id == self.predictors_id:
+            third_point = get_curved_arrow_points(target_coords[:2], target_coords[2:])
+            self.canvas.coords(
+                self.id,
+                *target_coords[:2],
+                *third_point,
+                *target_coords[2:],
+            )
+        else:
+            self.canvas.coords(
+                self.id,
+                *target_coords,
+            )
         if self.estimate is not None:
             self.estimate.move_to(*self.get_line_center())
 
@@ -324,3 +371,40 @@ class Arrow:
         }
 
         return arrow_dict
+
+
+def get_curved_arrow_points(
+    point_1: list[float], point_2: list[float], shift_upwards: float = 3000
+) -> list[float]:
+    """This function creates a third point between point_1 and point_2 such that a curved arrow can be drawn between the two points. The third point is located at the midpoint between point_1 and point_2 and is shifted upwards by shift_upwards pixels.
+
+    Args:
+        point_1 (list[float]): starting point of the arrow
+        point_2 (list[float]): ending point of the arrow
+        shift_upwards (float, optional): The distance the third point should be shifted upwards. Defaults to 20.
+    """
+    # get midpoint
+    midpoint = [(point_1[0] + point_2[0]) / 2, (point_1[1] + point_2[1]) / 2]
+    # get direction
+    direction = [point_2[0] - point_1[0], point_2[1] - point_1[1]]
+    arrow_length = (direction[0] ** 2 + direction[1] ** 2) ** 0.5
+    if arrow_length < 1e-5:
+        arrow_length = 1e-5
+    # get normal vector
+
+    normal = [-direction[1], direction[0]]
+
+    # normalize normal vector
+    length = (normal[0] ** 2 + normal[1] ** 2) ** 0.5
+    if length < 1e-5:
+        length = 1e-5
+    normal = [
+        normal[0] / length,
+        normal[1] / length,
+    ]
+    # get third point
+    third_point = [
+        midpoint[0] - min(50, (shift_upwards / arrow_length)) * normal[0],
+        midpoint[1] - min(50, (shift_upwards / arrow_length)) * normal[1],
+    ]
+    return third_point

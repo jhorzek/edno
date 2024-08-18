@@ -6,7 +6,9 @@ import customtkinter as ctk
 from typing import Callable
 
 
-def disallow_existing_connections(predictors_node, dependents_node, all_nodes) -> bool:
+def disallow_existing_connections(
+    predictors_node, dependents_node, all_nodes, arrow_type
+) -> bool:
     """
     Allow all connections except for existing connections.
 
@@ -28,7 +30,9 @@ def disallow_existing_connections(predictors_node, dependents_node, all_nodes) -
     return len(is_connected) == 0
 
 
-def disallow_self_loops(predictors_node, dependents_node, all_nodes) -> bool:
+def disallow_self_loops(
+    predictors_node, dependents_node, all_nodes, arrow_type
+) -> bool:
     """
     Allow all connection except for self-loops.
 
@@ -40,10 +44,14 @@ def disallow_self_loops(predictors_node, dependents_node, all_nodes) -> bool:
     Returns:
         bool: True if connection is allowed
     """
+    if arrow_type == "bidirected":
+        return True
     return predictors_node != dependents_node
 
 
-def disallow_self_and_existing(predictors_node, dependents_node, all_nodes) -> bool:
+def disallow_self_and_existing(
+    predictors_node, dependents_node, all_nodes, arrow_type
+) -> bool:
     """
     Allow all connection except for self-loops and existing connections.
 
@@ -56,8 +64,8 @@ def disallow_self_and_existing(predictors_node, dependents_node, all_nodes) -> b
         bool: True if connection is allowed
     """
     return disallow_existing_connections(
-        predictors_node, dependents_node, all_nodes
-    ) and disallow_self_loops(predictors_node, dependents_node, all_nodes)
+        predictors_node, dependents_node, all_nodes, arrow_type
+    ) and disallow_self_loops(predictors_node, dependents_node, all_nodes, arrow_type)
 
 
 class EdnoCanvas(tk.Canvas):
@@ -81,6 +89,11 @@ class EdnoCanvas(tk.Canvas):
             "allowed": "#90E4C1",
             "not allowed": "#ffcccb",
         },
+        arrow_types={
+            "Effect": "directed",
+            "Covariance": "bidirected",
+            "Undirected": "undirected",
+        },
         arrow_color="#000000",
         arrow_color_on_hover="#90E4C1",
         arrow_width=3,
@@ -91,18 +104,23 @@ class EdnoCanvas(tk.Canvas):
 
         Args:
             root (ctk.CTk): The ctk.CTk root object to which the EdnoCanvas should be added.
-            form_names (_type_, optional): Specifies what the rectangles and ellipse are called on the canvas. For example, {"rectangle": "manifest", "ellipse": "latent"} specifies that the rectangles will be called manifest variables and the ellipse will be called latent variables. Defaults to {"rectangle": "rectangle", "ellipse": "ellipse"}.
+            node_classes (dict[str, Callable], optional): A dictionary of node classes that can be added to the canvas. Defaults to {"Ellipse": EllipseNode, "Rectangle": PolyNode_factory(4), "Triangle": PolyNode_factory(3)}. The keys specify the names of the nodes on the canvas. For example, in Structural Equation Models, latent and observed variables could be represented by ellipses and rectangles, respectively ({"Latent": EllipseNode, "Observed": PolyNode_factory(4)}). New node types can be created using the PolyNode_factory function. Alternatively, nodes can be created by inheriting from PolyNode and adapting its methods.
             font (tuple, optional). Font used on the canvas. Defaults to ("Arial", 9).
             font_color (str, optional): Color of the text. Defaults to "#000000".
             node_color (_type_, optional): Color of nodes. Expects a dict with three keys: "default", "allowed", "not allowed". A default color for nodes, a color for allowed connections, and a color for disallowed connections. Defaults to { "default": "#ADD8E6", "allowed": "#90E4C1", "not allowed": "#ffcccb", }.
+            arrow_types (dict[str, str], optional): The types of arrows that can be drawn. Defaults to {"Effect": "directed", "Covariance": "bidirected", "Undirected": "undirected"}. The keys specify the names of the arrows on the canvas. The values specify the type of the arrow. The arrow type can be one of "directed", "bidirected", or "undirected".
             arrow_color (str, optional): Color of all arrows. Defaults to "#000000".
-            allowed_connections (Callable, optional): Callable  with signature (predictors_node, dependents_node, all_nodes) -> bool. This function will be called each time a user tries to connect two nodes. If the function returns True, the connection will be allowed, otherwise not. If the user hovers over a node, the color of the node will change to the allowed color if the connection is allowed, otherwise to the not allowed color. Defaults to disallow_self_and_existing.
+            arrow_color_on_hover (str, optional): Color of arrows when hovering over the arrow with the mouse. Defaults to "#90E4C1".
+            arrow_width (int, optional): Width of the arrows. Defaults to 3.
+            allowed_connections (Callable, optional): Callable  with signature (predictors_node, dependents_node, all_nodes, arrow_type) -> bool. This function will be called each time a user tries to connect two nodes. If the function returns True, the connection will be allowed, otherwise not. If the user hovers over a node, the color of the node will change to the allowed color if the connection is allowed, otherwise to the not allowed color. Defaults to disallow_self_and_existing.
+            kwargs: Additional keyword arguments to pass to the tk.Canvas constructor.
         """
         super().__init__(root, kwargs)
 
         self.node_classes = node_classes
         self.node_color = node_color
         self.font_color = font_color
+        self.arrow_types = arrow_types
         self.arrow_color = arrow_color
         self.arrow_color_on_hover = arrow_color_on_hover
         self.arrow_width = arrow_width
@@ -355,6 +373,7 @@ class CanvasContextMenu:
                 font=self.canvas.font,
                 font_color=self.canvas.font_color,
                 node_color=self.canvas.node_color,
+                arrow_types=self.canvas.arrow_types,
                 arrow_color=self.canvas.arrow_color,
             )
         )

@@ -7,7 +7,7 @@ from .TextBox import TextBox, get_polygon_points
 
 
 def allow_all_connections(
-    predictors_node: int, dependents_node: int, all_nodes: list["Node"]
+    predictors_node: int, dependents_node: int, all_nodes: list["Node"], arrow_type: str
 ) -> bool:
     """
     Allow all connections between nodes. This function is a placeholder that can be replaced with more sophisticated rules that determine if a connection is allowed or not.
@@ -16,6 +16,7 @@ def allow_all_connections(
         predictors_node (Node): The node that is the predictor.
         dependents_node (Node): The node that is the dependent.
         all_nodes (list[Node]): A list of all nodes in the canvas.
+        arrow_type (str): The type of arrow that is being drawn.
 
     Returns:
         bool: Always True.
@@ -149,6 +150,8 @@ class NodeMenu(tk.Menu):
         if (new_label is not None) and (len(new_label) > 0):
             # get current node and change label
             self.canvas.get_node_with_id(self.node_id).set_label(new_label)
+            # the following is just a hack to update the shape and all arrows
+            self.canvas.get_node_with_id(self.node_id).move(delta_x=0, delta_y=0)
         # close context menu
         self.canvas.context_menu = None
 
@@ -213,6 +216,7 @@ class PolyNode(TextBox):
             "allowed": "#90E4C1",
             "not allowed": "#ffcccb",
         },
+        width_height_multiplier: tuple[int, int] = (1.5, 2),
         arrow_types={
             "Effect": "directed",
             "Covariance": "bidirected",
@@ -233,7 +237,9 @@ class PolyNode(TextBox):
             font (tuple[str, int], optional): The font of the text (default is ("Arial", 12)).
             font_color (str, optional): The color of the text. Defaults to "#000000".
             polygon_sides (int, optional): The number of sides of the polygon around the text (default is 4).
-            node_color (str, optional): The color of the text box (default is #faf9f6).
+            node_color (_type_, optional): Color of nodes. Expects a dict with three keys: "default", "allowed", "not allowed". A default color for nodes, a color for allowed connections, and a color for disallowed connections. Defaults to { "default": "#ADD8E6", "allowed": "#90E4C1", "not allowed": "#ffcccb", }.
+            width_height_multiplier (tuple[int, int], optional): The width and height of the polygon around the text are calculated as the width of the text times the first element of this tuple and the height of the text times the second element of this tuple. Defaults to (1.5, 2).
+            arrow_types (dict[str, str], optional): The types of arrows that can be drawn. Defaults to {"Effect": "directed", "Covariance": "bidirected", "Undirected": "undirected"}.
             arrow_color (str, optional): The color of the arrows. Defaults to "#000000".
             allowed_connections (Callable, optional): this function will be called every time a user tries creating a new node. The function should return False if the user tries to create a non-allowed connection. Defaults to allow_all_connections. See allow_all_connections for the signature of these functions.
             NodeMenuClass (Callable, optional): The right-click menu for the node. Defaults to NodeMenu.
@@ -252,6 +258,7 @@ class PolyNode(TextBox):
             font_color=font_color,
             polygon_sides=polygon_sides,
             node_color=node_color["default"],
+            width_height_multiplier=width_height_multiplier,
             linked_objects=linked_objects,
         )
 
@@ -374,6 +381,7 @@ class PolyNode(TextBox):
                 predictors_node=self.canvas.arrow_start_node,
                 dependents_node=self.node_id,
                 all_nodes=self.canvas.nodes,
+                arrow_type=self.canvas.current_arrow_type,
             ):
                 self.canvas.itemconfig(self.shape_id, fill=self.node_color["allowed"])
             else:
@@ -460,6 +468,7 @@ class PolyNode(TextBox):
                 predictors_node=start_node_id,
                 dependents_node=end_node_id,
                 all_nodes=self.canvas.nodes,
+                arrow_type=self.canvas.current_arrow_type,
             ):
                 new_arrow = Arrow(
                     self.canvas,
@@ -539,6 +548,25 @@ class PolyNode(TextBox):
         }
 
         return node_dict
+
+    def get_self_loop_coords(self) -> list[float]:
+        """
+        Get the coordinates for a self-loop arrow.
+
+        Returns:
+            list[float]: The coordinates for the self-loop arrow.
+        """
+        center = self.get_location()
+        shape_bbox = self.canvas.bbox(self.shape_id)
+        # the points we chose are those that are at the center top and center right of the shape
+        return [
+            # center top
+            center[0],
+            shape_bbox[1],
+            # center right
+            shape_bbox[2],
+            center[1],
+        ]
 
     def get_line_intersection(self, line_coords: list[float]) -> list[float]:
         """In order to draw an arrow between two nodes, we have to find out where the arrow has to end. In edno, arrows are always drawn from the center of one form to the center of another form. This method is used to find the intersection point of a line that goes through both centers with the the outline of the shape. It is given the coordinates of the line_coords and should return the coordinates of the intersection point."""
@@ -640,7 +668,17 @@ def PolyNode_factory(polygon_sides: int) -> Callable:
             label: str,
             font: tuple[str, int] = ("Arial", 9),
             font_color: str = "#000000",
-            node_color: str = "#faf9f6",
+            node_color: dict[str, str] = {
+                "default": "#ADD8E6",
+                "allowed": "#90E4C1",
+                "not allowed": "#ffcccb",
+            },
+            width_height_multiplier: tuple[int, int] = (1.5, 2),
+            arrow_types={
+                "Effect": "directed",
+                "Covariance": "bidirected",
+                "Undirected": "undirected",
+            },
             arrow_color: str = "#000000",
             allowed_connections: Callable = allow_all_connections,
             NodeMenuClass: Callable = NodeMenu,
@@ -656,6 +694,7 @@ def PolyNode_factory(polygon_sides: int) -> Callable:
                 font (tuple[str, int], optional): The font of the text (default is ("Arial", 12)).
                 font_color (str, optional): The color of the text. Defaults to "#000000".
                 node_color (str, optional): The color of the text box (default is #faf9f6).
+                width_height_multiplier (tuple[int, int], optional): The width and height of the polygon around the text are calculated as the width of the text times the first element of this tuple and the height of the text times the second element of this tuple. Defaults to (1.5, 2).
                 arrow_color (str, optional): The color of the arrows. Defaults to "#000000".
                 allowed_connections (Callable, optional): this function will be called every time a user tries creating a new node. The function should return False if the user tries to create a non-allowed connection. Defaults to allow_all_connections. See allow_all_connections for the signature of these functions.
                 NodeMenuClass (Callable, optional): The right-click menu for the node. Defaults to NodeMenu.
@@ -670,6 +709,8 @@ def PolyNode_factory(polygon_sides: int) -> Callable:
                 font_color=font_color,
                 polygon_sides=polygon_sides,
                 node_color=node_color,
+                width_height_multiplier=width_height_multiplier,
+                arrow_types=arrow_types,
                 arrow_color=arrow_color,
                 allowed_connections=allowed_connections,
                 NodeMenuClass=NodeMenuClass,

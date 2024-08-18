@@ -107,6 +107,7 @@ class TextBox:
         font_color: str = "#000000",
         node_color: str = "#faf9f6",
         polygon_sides: int = 4,
+        width_height_multiplier: tuple[int, int] = (1.5, 2),
         linked_objects: Any = None,
     ) -> None:
         """Initializes a basic node instance.
@@ -120,10 +121,12 @@ class TextBox:
             font_color (str, optional): The color of the text. Defaults to "#000000".
             node_color (str, optional): The color of the text box (default is #faf9f6).
             polygon_sides (int, optional): The number of sides of the polygon around the text (default is 4).
+            width_height_multiplier (tuple[int, int], optional): The width and height of the polygon around the text are calculated as the width of the text times the first element of this tuple and the height of the text times the second element of this tuple. Defaults to (1.5, 2).
             linked_objects (Any, optional): linked_objects allows linking other objects to the node. This could, for example, be an R squared value that is shown above the node. These objects must implement the following methods: move(delta_x, delta_y), delete(), hide(), show(). Defaults to None.
         """
         self.canvas = canvas
         self.label = label
+        self.width_height_multiplier = width_height_multiplier
         self.node_id = self.create_text(x, y, font=font, font_color=font_color)
         self.node_color = node_color
         self.polygon_sides = polygon_sides
@@ -147,8 +150,8 @@ class TextBox:
         """
         center = self.get_location()
         text_bbox = self.canvas.bbox(self.node_id)
-        width = 1.5 * (text_bbox[2] - text_bbox[0])
-        height = 2 * (text_bbox[3] - text_bbox[1])
+        width = self.width_height_multiplier[0] * (text_bbox[2] - text_bbox[0])
+        height = self.width_height_multiplier[1] * (text_bbox[3] - text_bbox[1])
         polygon_points = get_polygon_points(
             x=center[0],
             y=center[1],
@@ -248,8 +251,8 @@ class TextBox:
         if text_bbox is None:
             # happens if label = ""
             return
-        width = 1.5 * (text_bbox[2] - text_bbox[0])
-        height = 2 * (text_bbox[3] - text_bbox[1])
+        width = self.width_height_multiplier[0] * (text_bbox[2] - text_bbox[0])
+        height = self.width_height_multiplier[1] * (text_bbox[3] - text_bbox[1])
         polygon_points = get_polygon_points(
             x=center[0],
             y=center[1],

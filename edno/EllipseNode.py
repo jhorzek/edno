@@ -21,6 +21,11 @@ class EllipseNode(PolyNode):
             "not allowed": "#ffcccb",
         },
         arrow_color: str = "#000000",
+        arrow_types={
+            "Effect": "directed",
+            "Covariance": "bidirected",
+            "Undirected": "undirected",
+        },
         allowed_connections: Callable = allow_all_connections,
         NodeMenuClass: Callable = NodeMenu,
         linked_objects: Any = None,
@@ -34,8 +39,9 @@ class EllipseNode(PolyNode):
             label (str): The label to be displayed inside the node.
             font (tuple[str, int], optional): The font of the text (default is ("Arial", 12)).
             font_color (str, optional): The color of the text. Defaults to "#000000".
-            node_color (str, optional): The color of the text box (default is #faf9f6).
+            node_color (_type_, optional): Color of nodes. Expects a dict with three keys: "default", "allowed", "not allowed". A default color for nodes, a color for allowed connections, and a color for disallowed connections. Defaults to { "default": "#ADD8E6", "allowed": "#90E4C1", "not allowed": "#ffcccb", }.
             arrow_color (str, optional): The color of the arrows. Defaults to "#000000".
+            arrow_types (dict[str, str], optional): The types of arrows that can be drawn. Defaults to {"Effect": "directed", "Covariance": "bidirected", "Undirected": "undirected"}.
             allowed_connections (Callable, optional): this function will be called every time a user tries creating a new node. The function should return False if the user tries to create a non-allowed connection. Defaults to allow_all_connections. See allow_all_connections for the signature of these functions.
             NodeMenuClass (Callable, optional): The right-click menu for the node. Defaults to NodeMenu.
             linked_objects (Any, optional): linked_objects allows linking other objects to the node. This could, for example, be an R squared value that is shown above the node. These objects must implement the following methods: move(delta_x, delta_y), delete(), hide(), show(). Defaults to None.
@@ -50,6 +56,7 @@ class EllipseNode(PolyNode):
             font_color=font_color,
             node_color=node_color,
             arrow_color=arrow_color,
+            arrow_types=arrow_types,
             allowed_connections=allowed_connections,
             NodeMenuClass=NodeMenuClass,
             linked_objects=linked_objects,

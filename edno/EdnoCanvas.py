@@ -82,6 +82,8 @@ class EdnoCanvas(tk.Canvas):
             "not allowed": "#ffcccb",
         },
         arrow_color="#000000",
+        arrow_color_on_hover="#90E4C1",
+        arrow_width=3,
         allowed_connections: Callable = disallow_self_and_existing,
         **kwargs,
     ) -> None:
@@ -102,6 +104,8 @@ class EdnoCanvas(tk.Canvas):
         self.node_color = node_color
         self.font_color = font_color
         self.arrow_color = arrow_color
+        self.arrow_color_on_hover = arrow_color_on_hover
+        self.arrow_width = arrow_width
         self.allowed_connections = allowed_connections
 
         # initialize nodes
@@ -195,8 +199,6 @@ class EdnoCanvas(tk.Canvas):
         for node in self.nodes:
             node.update_shape()
         # the arrow heads also need to be updated
-        for arrow in self.arrows:
-            arrow.arrow_head.update()
         for arrow in self.arrows:
             arrow.update_box()
 

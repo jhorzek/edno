@@ -127,7 +127,7 @@ class NodeMenu(tk.Menu):
             node_position[1],
             node_position[0],
             node_position[1],
-            width=2,
+            width=self.canvas.arrow_width,
             arrow=arrow_head,
             fill=self.canvas.arrow_color,
         )

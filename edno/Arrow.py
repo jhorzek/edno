@@ -81,9 +81,9 @@ class Arrow:
     def __init__(
         self,
         canvas: "EdnoCanvas",
-        id: int,
         dependents_id: int,
         predictors_id: int,
+        arrow_type="directed",
         font=("Arial", 9),
         font_color: str = "#000000",
         arrow_color="#000000",
@@ -93,7 +93,6 @@ class Arrow:
 
         Args:
             canvas (EdnoCanvas): The canvas where the arrow is drawn.
-            id (int): The canvas-id of the arrow. This id uniquely identifies the arrow in the canvas object
             dependents_id (int): The canvas-id of the node where the arrow has its head (the dependent)
             predictors_id (int): The canvas-id of the node that the arrow has its origin in (the predictor)
             font (tuple, optional): The font of the estimate shown on the arrow. Defaults to ("Arial", 9).
@@ -103,27 +102,57 @@ class Arrow:
         """
 
         self.canvas = canvas
-        self.id = id
         self.font = font
         self.font_color = font_color
         self.arrow_color = arrow_color
-        self.additional_information = additional_information
-        self.add_estimate()
         self.dependents_id = dependents_id
         self.predictors_id = predictors_id
+        self.arrow_type = arrow_type
+
+        # initialize arrow
+        if arrow_type == "directed":
+            arrow_head = tk.LAST
+        elif arrow_type == "undirected":
+            arrow_head = tk.NONE
+        elif arrow_type == "bidirected":
+            arrow_head = tk.BOTH
+        target_coords = self.get_target_coordinates()
+        # draw arrow:
+        self.id = self.canvas.create_line(
+            *target_coords,
+            fill=self.arrow_color,
+            arrow=arrow_head,
+        )
+        self.canvas.tag_lower(self.id)
+
+        self.additional_information = additional_information
+        self.add_estimate()
+
         self.context_menu = tk.Menu(self.canvas, tearoff=0)
         self.context_menu.add_command(label="Delete", command=self.delete)
         self.context_menu.add_command(label="Rename", command=self.estimate.rename)
 
-        self.arrow_head = ArrowHead(
-            canvas=self.canvas,
-            line_id=self.id,
-            predictor_id=self.predictors_id,
-            dependent_id=self.dependents_id,
-            arrow_color=self.arrow_color,
-        )
         # Add right click menu
         self.canvas.tag_bind(self.id, "<Button-3>", self.context_menu_show)
+
+    def get_target_coordinates(self) -> list[float]:
+        """The arrow connects two nodes. This method returns the x and y coordinates of points where the arrow contacts the outline of the target nodes.
+
+        Returns:
+            list[float]: A list with x1, y1, x2, y2 coordinates.
+        """
+        # get intersection points of the line between the nodes with the shapes
+        # get center of start and end node:
+        start_node = self.canvas.get_node_with_id(self.predictors_id)
+        end_node = self.canvas.get_node_with_id(self.dependents_id)
+
+        x1, y1 = start_node.get_location()
+        x2, y2 = end_node.get_location()
+
+        # find intersection point of line between centers and the outline of the shape
+        start_intersection = start_node.get_line_intersection([x1, y1, x2, y2])
+        end_intersection = end_node.get_line_intersection([x1, y1, x2, y2])
+        return start_intersection + end_intersection
 
     def direction(self) -> list[float]:
         """Direction of the arrow
@@ -211,33 +240,14 @@ class Arrow:
             self.context_menu.grab_release()
             self.context_menu.position = [event.x, event.y]
 
-    def move(
-        self, delta_x1: float, delta_y1: float, delta_x2: float, delta_y2: float
-    ) -> None:
-        """Move the arrow in space.
+    def update_position(self) -> None:
+        """Update the position of the arrow. This is necessary when the nodes moves."""
 
-        The location of a line on the canvas is given by two points: the start point [x1,y1] and
-        the end point [x2,y2]. The arrow will show in the direction of the end point.
-        move() adjusts both of these points.
-
-        Args:
-            delta_x1 (float): Change in x1
-            delta_y1 (float): Change in y1
-            delta_x2 (float): Change in x2
-            delta_y2 (float): Change in y2
-        """
-
-        location = self.canvas.coords(self.id)
+        target_coords = self.get_target_coordinates()
         self.canvas.coords(
             self.id,
-            [
-                location[0] + delta_x1,
-                location[1] + delta_y1,
-                location[2] + delta_x2,
-                location[3] + delta_y2,
-            ],
+            *target_coords,
         )
-        self.arrow_head.update()
         if self.estimate is not None:
             self.estimate.move_to(*self.get_line_center())
 
@@ -250,7 +260,6 @@ class Arrow:
             nd.predictors_arrow_id = [
                 inc for inc in nd.predictors_arrow_id if inc is not self.id
             ]
-        self.canvas.delete(self.arrow_head.arrow_id)
         self.canvas.delete(self.estimate.delete())
         self.canvas.delete(self.id)
         self.canvas.context_menu = None
@@ -300,85 +309,3 @@ class Arrow:
         }
 
         return arrow_dict
-
-
-class ArrowHead:
-    def __init__(
-        self,
-        canvas: "EdnoCanvas",
-        line_id: int,
-        predictor_id: int,
-        dependent_id: int,
-        arrow_color: str = "#00000",
-    ) -> None:
-        """_summary_
-
-        Args:
-            canvas (EdnoCanvas): The canvas object on which the arrow will be drawn.
-            line_id (int): The ID of the line associated with the arrow.
-            predictor_id (int): The ID of the predictor node.
-            dependent_id (int): The ID of the dependent node.
-            arrow_color (str, optional): _description_. Defaults to "#00000".
-
-        Raises:
-            ValueError: If the number of predictor nodes is not equal to 1.
-            ValueError: If the number of dependent nodes is not equal to 1.
-        """
-
-        self.canvas = canvas
-        self.line_id = line_id
-        # get the predictor and the dependent location
-        self.predictor_node = [nd for nd in canvas.nodes if nd.node_id == predictor_id]
-        self.dependents_node = [nd for nd in canvas.nodes if nd.node_id == dependent_id]
-        if len(self.predictor_node) != 1:
-            raise ValueError("Expected predictor nodes to be of length 1")
-
-        if len(self.dependents_node) != 1:
-            raise ValueError("Expected dependent nodes to be of length 1")
-
-        # initialize
-        coords = self.get_target_coords()
-        self.arrow_id = self.canvas.create_polygon(
-            coords,
-            fill=arrow_color,
-            outline=arrow_color,
-            width=2,
-        )
-        self.canvas.tag_lower(self.arrow_id)
-
-    def get_target_coords(self) -> list[float]:
-        """Compute the target coordinates of the arrow head based on the predictor node
-        and the dependent node.
-
-        Returns:
-            list[float]: List with 2 coordinates for the intersection point
-        """
-        # get coordinates of target shape s:
-        line_coord = self.canvas.coords(self.line_id)
-        intersect = self.dependents_node[0].get_line_intersection(
-            line_coords=line_coord
-        )
-
-        x = intersect[0]
-        y = intersect[1]
-        # get direction
-        line_dir = [line_coord[2] - line_coord[0], line_coord[3] - line_coord[1]]
-        # get line length
-        line_len = (line_dir[0] ** 2 + line_dir[1] ** 2) ** 0.5
-        if line_len == 0.0:
-            line_len = 0.01
-        # we want to go a few pixels in the direction of the dependents node
-        # and a few pixels up/down
-        x2 = x - (15 / line_len) * line_dir[0]
-        y2 = y - (15 / line_len) * line_dir[1]
-        up_x = [x2 - (5 / line_len) * line_dir[1], y2 + (5 / line_len) * line_dir[0]]
-        down_x = [x2 + (5 / line_len) * line_dir[1], y2 - (5 / line_len) * line_dir[0]]
-
-        return [x, y, up_x[0], up_x[1], down_x[0], down_x[1]]
-
-    def update(self) -> None:
-        """
-        Update the coordinates of the arrow head. This is necessary when the line moves
-        """
-        coords = self.get_target_coords()
-        self.canvas.coords(self.arrow_id, coords)

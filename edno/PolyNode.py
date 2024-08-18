@@ -407,11 +407,11 @@ class PolyNode(TextBox):
         for out in self.dependents_arrow_id:
             for arr in self.canvas.arrows:
                 if arr.id == out:
-                    arr.move(delta_x, delta_y, 0, 0)
+                    arr.update_position()
         for inc in self.predictors_arrow_id:
             for arr in self.canvas.arrows:
                 if arr.id == inc:
-                    arr.move(0, 0, delta_x, delta_y)
+                    arr.update_position()
 
     def move_to(self, x: int | float, y: int | float) -> None:
         """
@@ -423,7 +423,7 @@ class PolyNode(TextBox):
         """
         raise ValueError("Cannot use move_to for class Node. Only move is allowed.")
 
-    def draw_arrow(self, event) -> None:
+    def draw_arrow(self, event, arrow_type="directed") -> None:
         """
         Draw an arrow between nodes.
 
@@ -438,28 +438,14 @@ class PolyNode(TextBox):
                 dependents_node=end_node_id,
                 all_nodes=self.canvas.nodes,
             ):
-                # get center of start and end node:
-                start_node = self.canvas.get_node_with_id(start_node_id)
-                end_node = self.canvas.get_node_with_id(end_node_id)
-
-                x1, y1 = start_node.get_location()
-                x2, y2 = end_node.get_location()
-
-                # draw arrow:
-                new_arrow = self.canvas.create_line(
-                    x1, y1, x2, y2, fill=self.arrow_color
+                new_arrow = Arrow(
+                    self.canvas,
+                    predictors_id=start_node_id,
+                    dependents_id=end_node_id,
+                    arrow_color=self.arrow_color,
                 )
-                self.canvas.tag_lower(new_arrow)
-                self.canvas.tag_lower(new_arrow)
-                self.canvas.arrows.append(
-                    Arrow(
-                        self.canvas,
-                        new_arrow,
-                        predictors_id=start_node.node_id,
-                        dependents_id=end_node.node_id,
-                        arrow_color=self.arrow_color,
-                    )
-                )
+
+                self.canvas.arrows.append(new_arrow)
             else:
                 self.canvas.drawing_arrow = False
                 self.canvas.arrow_start_node = None
@@ -472,10 +458,10 @@ class PolyNode(TextBox):
                 )
         for nd in self.canvas.nodes:
             if self.canvas.drawing_arrow:
-                if nd.node_id == start_node.node_id:
-                    nd.dependents_arrow_id.append(new_arrow)
-                if nd.node_id == end_node.node_id:
-                    nd.predictors_arrow_id.append(new_arrow)
+                if nd.node_id == start_node_id:
+                    nd.dependents_arrow_id.append(new_arrow.id)
+                if nd.node_id == end_node_id:
+                    nd.predictors_arrow_id.append(new_arrow.id)
         self.canvas.drawing_arrow = False
         self.canvas.arrow_start_node = None
         if self.canvas.temporary_arrow is not None:

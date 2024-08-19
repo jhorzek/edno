@@ -1,5 +1,5 @@
-import customtkinter as ctk
 import tkinter as tk
+import ttkbootstrap as ttk
 from .TextBox import TextBox
 from typing import Any
 
@@ -74,8 +74,11 @@ class Estimate(TextBox):
 
         This will open a dialog in the GUI for users to rename the nodes
         """
-        input = ctk.CTkInputDialog(text="Parameter label:", title="Rename Parameter")
-        new_label = input.get_input()  # opens the dialog
+        new_label = ttk.dialogs.dialogs.Querybox.get_string(
+            prompt="Parameter label:",
+            title="Rename Parameter",
+            initialvalue=self.parameter_label,
+        )
         if (new_label is not None) and (len(new_label) > 0):
             self.parameter_label = new_label
 
@@ -281,7 +284,9 @@ class Arrow:
             return
         # https://www.geeksforgeeks.org/right-click-menu-using-tkinter/
         try:
-            self.context_menu.tk_popup(event.x_root, event.y_root, 0)
+            # we add one pixel each due to a bug in ttkbootstrap, where, without this
+            # change, the first element gets auto-selected.
+            self.context_menu.tk_popup(event.x_root + 1, event.y_root + 1, 0)
         finally:
             self.context_menu.grab_release()
             self.context_menu.position = [event.x, event.y]
@@ -365,9 +370,15 @@ class Arrow:
             "predictors": [
                 nd for nd in self.canvas.nodes if nd.node_id == self.predictors_id
             ][0].get_label(),
+            "predictors_type": [
+                nd for nd in self.canvas.nodes if nd.node_id == self.predictors_id
+            ][0].type,
             "dependents": [
                 nd for nd in self.canvas.nodes if nd.node_id == self.dependents_id
             ][0].get_label(),
+            "dependents_type": [
+                nd for nd in self.canvas.nodes if nd.node_id == self.dependents_id
+            ][0].type,
         }
 
         return arrow_dict

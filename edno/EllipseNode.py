@@ -12,6 +12,7 @@ class EllipseNode(PolyNode):
         canvas: "EdnoCanvas",
         x: int | float,
         y: int | float,
+        type: str,
         label: str,
         font: tuple[str, int] = ("Arial", 9),
         font_color: str = "#000000",
@@ -36,6 +37,7 @@ class EllipseNode(PolyNode):
             canvas (EdnoCanvas): The tkinter canvas object where the node box will be drawn.
             x (int | float): The x-coordinate of the node's position.
             y (int | float): The y-coordinate of the node's position.
+            type (str): The type of the node. This is the label given to the node type when creating the node. The objective is to distinguish between different types of nodes (e.g., latent and manifest).
             label (str): The label to be displayed inside the node.
             font (tuple[str, int], optional): The font of the text (default is ("Arial", 12)).
             font_color (str, optional): The color of the text. Defaults to "#000000".
@@ -51,6 +53,7 @@ class EllipseNode(PolyNode):
             canvas=canvas,
             x=x,
             y=y,
+            type=type,
             label=label,
             font=font,
             font_color=font_color,

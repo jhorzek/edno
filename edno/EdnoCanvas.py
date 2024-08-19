@@ -1,8 +1,8 @@
 import tkinter as tk
+import ttkbootstrap as ttk
 from .EllipseNode import EllipseNode
 from .PolyNode import PolyNode, PolyNode_factory
 from .Arrow import Arrow
-import customtkinter as ctk
 from typing import Callable
 
 
@@ -76,7 +76,7 @@ class EdnoCanvas(tk.Canvas):
 
     def __init__(
         self,
-        root: ctk.CTk,
+        root: tk.Tk,
         node_classes: dict[str, Callable] = {
             "Ellipse": EllipseNode,
             "Rectangle": PolyNode_factory(4),
@@ -103,7 +103,7 @@ class EdnoCanvas(tk.Canvas):
         """Initialize a new EdnoCanvas.
 
         Args:
-            root (ctk.CTk): The ctk.CTk root object to which the EdnoCanvas should be added.
+            root (ttk.Window): The ttk.Window root object to which the EdnoCanvas should be added.
             node_classes (dict[str, Callable], optional): A dictionary of node classes that can be added to the canvas. Defaults to {"Ellipse": EllipseNode, "Rectangle": PolyNode_factory(4), "Triangle": PolyNode_factory(3)}. The keys specify the names of the nodes on the canvas. For example, in Structural Equation Models, latent and observed variables could be represented by ellipses and rectangles, respectively ({"Latent": EllipseNode, "Observed": PolyNode_factory(4)}). New node types can be created using the PolyNode_factory function. Alternatively, nodes can be created by inheriting from PolyNode and adapting its methods.
             font (tuple, optional). Font used on the canvas. Defaults to ("Arial", 9).
             font_color (str, optional): Color of the text. Defaults to "#000000".
@@ -260,6 +260,7 @@ class EdnoCanvas(tk.Canvas):
             # getting the labels of the predictors and dependents is a bit complicated, as each node
             # only knows about the arrows, but not the predicting / predicted nodes themselves. So,
             # we need to first find the arrows and then get the labels of the nodes these arrows come from / go to.
+            type = node.type
             incoming_arrows_id = [arrow for arrow in node.predictors_arrow_id]
             outgoing_arrows_id = [arrow for arrow in node.dependents_arrow_id]
             # given the ids, we can find the actual arrows
@@ -283,6 +284,7 @@ class EdnoCanvas(tk.Canvas):
                 nd.get_label() for nd in self.nodes if nd.node_id in predictors_ids
             ]
             node_connections[node.get_label()] = {
+                "type": type,
                 "dependents": dependents,
                 "predictors": predictors,
             }
@@ -332,7 +334,7 @@ class CanvasContextMenu:
 
     def __init__(
         self,
-        root: ctk.CTk,
+        root: ttk.Window,
         canvas: "EdnoCanvas",
         node_classes: dict[str, Callable],
     ) -> None:
@@ -340,7 +342,7 @@ class CanvasContextMenu:
         Initializes a new instance of the CanvasContextMenu class.
 
         Args:
-            root (ctk.CTk): The root window of the GUI.
+            root (ttk.Window): The root window of the GUI.
             canvas (EdnoCanvas): The canvas object associated with the context menu.
             node_classes: dict[str, Callable]: A dictionary of node classes that can be added to the canvas.
         """
@@ -350,18 +352,21 @@ class CanvasContextMenu:
         for key, node_class in self.node_classes.items():
             self.canvas_context_menu.add_command(
                 label=f"Add {key}",
-                command=lambda node_class=node_class: self.create_node(node_class),
+                command=lambda node_class=node_class, key=key: self.create_node(
+                    node_class, type=key
+                ),
             )
 
         self.canvas.bind("<Button-3>", self.show_right_click_menu)
         self.canvas.bind("<Button-1>", self.release_right_click_menu)
 
-    def create_node(self, node_class: Callable) -> None:
+    def create_node(self, node_class: Callable, type: str) -> None:
         """
         Creates a new node on the canvas at the position of the context menu.
 
         Args:
             node_class (Callable): The class of the node
+            type (str): The type of the node
         """
         self.canvas.nodes.append(
             node_class(
@@ -369,6 +374,7 @@ class CanvasContextMenu:
                 label="",
                 x=self.canvas.context_menu.position[0],
                 y=self.canvas.context_menu.position[1],
+                type=type,
                 allowed_connections=self.canvas.allowed_connections,
                 font=self.canvas.font,
                 font_color=self.canvas.font_color,
@@ -392,7 +398,7 @@ class CanvasContextMenu:
             return
         # https://www.geeksforgeeks.org/right-click-menu-using-tkinter/
         try:
-            self.canvas.context_menu.tk_popup(event.x_root, event.y_root, 0)
+            self.canvas.context_menu.tk_popup(event.x_root + 1, event.y_root + 1, 0)
         finally:
             self.canvas.context_menu.grab_release()
             # save position on canvas to add nodes at that position

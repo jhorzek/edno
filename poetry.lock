@@ -401,6 +401,20 @@ files = [
 ]
 
 [[package]]
+name = "ttkbootstrap"
+version = "1.10.1"
+description = "A supercharged theme extension for tkinter that enables on-demand modern flat style themes inspired by Bootstrap."
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "ttkbootstrap-1.10.1-py3-none-any.whl", hash = "sha256:c6a10ee5ea64051a0f8b75c20ef8e5f2417c62b4d0858c831683d4f2135aa573"},
+    {file = "ttkbootstrap-1.10.1.tar.gz", hash = "sha256:53925525c4104f9e345627500dced2d0392ad74324b2a81467aaee3ffbe1a474"},
+]
+
+[package.dependencies]
+pillow = ">=8.2.0"
+
+[[package]]
 name = "typing-extensions"
 version = "4.12.2"
 description = "Backported and Experimental Type Hints for Python 3.8+"
@@ -434,4 +448,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "413a07576178bfe2a0726d5a131c851ff450e9f46922ef3f3c74129e31225c98"
+content-hash = "48ee38d59e448b86450a9b3900d8210d0375bb20d95ee58428cc3b7353220c3a"

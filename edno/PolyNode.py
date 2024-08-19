@@ -1,5 +1,5 @@
 import tkinter as tk
-import customtkinter as ctk
+import ttkbootstrap as ttk
 from math import inf
 from typing import Callable, Any
 from .Arrow import Arrow
@@ -107,6 +107,7 @@ class NodeMenu(tk.Menu):
                 label=f"Add {key}",
                 command=lambda v=value: self.start_connection_mode(arrow_type=v),
             )
+        self.add_separator()
 
         self.add_command(label="Rename Node", command=self.rename)
         self.add_command(label="Delete Node", command=self.delete)
@@ -145,8 +146,9 @@ class NodeMenu(tk.Menu):
 
         This will open a dialog in the GUI for users to rename the nodes
         """
-        input = ctk.CTkInputDialog(text="New variable name:", title="Rename Variable")
-        new_label = input.get_input()  # opens the dialog
+        new_label = ttk.dialogs.dialogs.Querybox.get_string(
+            prompt="New variable name:", title="Rename Variable"
+        )
         if (new_label is not None) and (len(new_label) > 0):
             # get current node and change label
             self.canvas.get_node_with_id(self.node_id).set_label(new_label)
@@ -207,6 +209,7 @@ class PolyNode(TextBox):
         canvas: "EdnoCanvas",
         x: int | float,
         y: int | float,
+        type: str,
         label: str,
         font: tuple[str, int] = ("Arial", 9),
         font_color: str = "#000000",
@@ -233,6 +236,7 @@ class PolyNode(TextBox):
             canvas (EdnoCanvas): The tkinter canvas object where the node box will be drawn.
             x (int | float): The x-coordinate of the node's position.
             y (int | float): The y-coordinate of the node's position.
+            type (str): The type of the node. This is the label given to the node type when creating the node. The objective is to distinguish between different types of nodes (e.g., latent and manifest).
             label (str): The label to be displayed inside the node.
             font (tuple[str, int], optional): The font of the text (default is ("Arial", 12)).
             font_color (str, optional): The color of the text. Defaults to "#000000".
@@ -261,6 +265,8 @@ class PolyNode(TextBox):
             width_height_multiplier=width_height_multiplier,
             linked_objects=linked_objects,
         )
+
+        self.type = type
 
         self.node_color = node_color
 
@@ -411,7 +417,7 @@ class PolyNode(TextBox):
             return
         # https://www.geeksforgeeks.org/right-click-menu-using-tkinter/
         try:
-            self.context_menu.tk_popup(event.x_root, event.y_root, 0)
+            self.context_menu.tk_popup(event.x_root + 1, event.y_root + 1, 0)
         finally:
             self.context_menu.grab_release()
             self.context_menu.position = [event.x, event.y]
@@ -541,6 +547,7 @@ class PolyNode(TextBox):
 
         node_dict = {
             "id": self.node_id,
+            "type": self.type,
             "label": self.get_label(),
             "position": self.canvas.coords(self.node_id),
             "predictors": predictor_nodes,
@@ -665,6 +672,7 @@ def PolyNode_factory(polygon_sides: int) -> Callable:
             canvas: "EdnoCanvas",
             x: int | float,
             y: int | float,
+            type: str,
             label: str,
             font: tuple[str, int] = ("Arial", 9),
             font_color: str = "#000000",
@@ -690,6 +698,7 @@ def PolyNode_factory(polygon_sides: int) -> Callable:
                 canvas (EdnoCanvas): The tkinter canvas object where the node box will be drawn.
                 x (int | float): The x-coordinate of the node's position.
                 y (int | float): The y-coordinate of the node's position.
+                type (str): The type of the node. This is the label given to the node type when creating the node. The objective is to distinguish between different types of nodes (e.g., latent and manifest).
                 label (str): The label to be displayed inside the node.
                 font (tuple[str, int], optional): The font of the text (default is ("Arial", 12)).
                 font_color (str, optional): The color of the text. Defaults to "#000000".
@@ -704,6 +713,7 @@ def PolyNode_factory(polygon_sides: int) -> Callable:
                 canvas=canvas,
                 x=x,
                 y=y,
+                type=type,
                 label=label,
                 font=font,
                 font_color=font_color,

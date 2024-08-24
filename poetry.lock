@@ -83,35 +83,6 @@ files = [
 ]
 
 [[package]]
-name = "customtkinter"
-version = "5.2.2"
-description = "Create modern looking GUIs with Python"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "customtkinter-5.2.2-py3-none-any.whl", hash = "sha256:14ad3e7cd3cb3b9eb642b9d4e8711ae80d3f79fb82545ad11258eeffb2e6b37c"},
-    {file = "customtkinter-5.2.2.tar.gz", hash = "sha256:fd8db3bafa961c982ee6030dba80b4c2e25858630756b513986db19113d8d207"},
-]
-
-[package.dependencies]
-darkdetect = "*"
-packaging = "*"
-
-[[package]]
-name = "darkdetect"
-version = "0.8.0"
-description = "Detect OS Dark Mode from Python"
-optional = false
-python-versions = ">=3.6"
-files = [
-    {file = "darkdetect-0.8.0-py3-none-any.whl", hash = "sha256:a7509ccf517eaad92b31c214f593dbcf138ea8a43b2935406bbd565e15527a85"},
-    {file = "darkdetect-0.8.0.tar.gz", hash = "sha256:b5428e1170263eb5dea44c25dc3895edd75e6f52300986353cd63533fe7df8b1"},
-]
-
-[package.extras]
-macos-listener = ["pyobjc-framework-Cocoa"]
-
-[[package]]
 name = "distlib"
 version = "0.3.8"
 description = "Distribution utilities"
@@ -401,6 +372,20 @@ files = [
 ]
 
 [[package]]
+name = "ttkbootstrap"
+version = "1.10.1"
+description = "A supercharged theme extension for tkinter that enables on-demand modern flat style themes inspired by Bootstrap."
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "ttkbootstrap-1.10.1-py3-none-any.whl", hash = "sha256:c6a10ee5ea64051a0f8b75c20ef8e5f2417c62b4d0858c831683d4f2135aa573"},
+    {file = "ttkbootstrap-1.10.1.tar.gz", hash = "sha256:53925525c4104f9e345627500dced2d0392ad74324b2a81467aaee3ffbe1a474"},
+]
+
+[package.dependencies]
+pillow = ">=8.2.0"
+
+[[package]]
 name = "typing-extensions"
 version = "4.12.2"
 description = "Backported and Experimental Type Hints for Python 3.8+"
@@ -434,4 +419,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "413a07576178bfe2a0726d5a131c851ff450e9f46922ef3f3c74129e31225c98"
+content-hash = "71958ae38f6846b1bf3472d5148b3b9c9a22ef050012e7a9c99d781b786a802a"

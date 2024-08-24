@@ -1,18 +1,21 @@
 import tkinter as tk
-from .nodes import Node
-from .arrow import Arrow
-import customtkinter as ctk
+import ttkbootstrap as ttk
+from .EllipseNode import EllipseNode
+from .PolyNode import PolyNode, PolyNode_factory
+from .Arrow import Arrow
 from typing import Callable
 
 
-def disallow_existing_connections(predictors_node, dependents_node, all_nodes) -> bool:
+def disallow_existing_connections(
+    predictors_node, dependents_node, all_nodes, arrow_type
+) -> bool:
     """
     Allow all connections except for existing connections.
 
     Args:
-        predictors_node (Node): The node that is the predictor.
-        dependents_node (Node): The node that is the dependent.
-        all_nodes (list[Node]): A list of all nodes in the canvas.
+        predictors_node (PolyNode): The node that is the predictor.
+        dependents_node (PolyNode): The node that is the dependent.
+        all_nodes (list[PolyNode]): A list of all nodes in the canvas.
 
     Returns:
         bool: True if connection is allowed
@@ -27,36 +30,42 @@ def disallow_existing_connections(predictors_node, dependents_node, all_nodes) -
     return len(is_connected) == 0
 
 
-def disallow_self_loops(predictors_node, dependents_node, all_nodes) -> bool:
+def disallow_self_loops(
+    predictors_node, dependents_node, all_nodes, arrow_type
+) -> bool:
     """
     Allow all connection except for self-loops.
 
     Args:
-        predictors_node (Node): The node that is the predictor.
-        dependents_node (Node): The node that is the dependent.
-        all_nodes (list[Node]): A list of all nodes in the canvas.
+        predictors_node (PolyNode): The node that is the predictor.
+        dependents_node (PolyNode): The node that is the dependent.
+        all_nodes (list[PolyNode]): A list of all nodes in the canvas.
 
     Returns:
         bool: True if connection is allowed
     """
+    if arrow_type == "bidirected":
+        return True
     return predictors_node != dependents_node
 
 
-def disallow_self_and_existing(predictors_node, dependents_node, all_nodes) -> bool:
+def disallow_self_and_existing(
+    predictors_node, dependents_node, all_nodes, arrow_type
+) -> bool:
     """
     Allow all connection except for self-loops and existing connections.
 
     Args:
-        predictors_node (Node): The node that is the predictor.
-        dependents_node (Node): The node that is the dependent.
-        all_nodes (list[Node]): A list of all nodes in the canvas.
+        predictors_node (PolyNode): The node that is the predictor.
+        dependents_node (PolyNode): The node that is the dependent.
+        all_nodes (list[PolyNode]): A list of all nodes in the canvas.
 
     Returns:
         bool: True if connection is allowed
     """
     return disallow_existing_connections(
-        predictors_node, dependents_node, all_nodes
-    ) and disallow_self_loops(predictors_node, dependents_node, all_nodes)
+        predictors_node, dependents_node, all_nodes, arrow_type
+    ) and disallow_self_loops(predictors_node, dependents_node, all_nodes, arrow_type)
 
 
 class EdnoCanvas(tk.Canvas):
@@ -67,8 +76,12 @@ class EdnoCanvas(tk.Canvas):
 
     def __init__(
         self,
-        root: ctk.CTk,
-        form_names: dict[str, str] = {"rectangle": "rectangle", "ellipse": "ellipse"},
+        root: tk.Tk,
+        node_classes: dict[str, Callable] = {
+            "Ellipse": EllipseNode,
+            "Rectangle": PolyNode_factory(4),
+            "Triangle": PolyNode_factory(3),
+        },
         font=("Arial", 9),
         font_color="#000000",
         node_color: dict[str, str] = {
@@ -76,31 +89,45 @@ class EdnoCanvas(tk.Canvas):
             "allowed": "#90E4C1",
             "not allowed": "#ffcccb",
         },
+        arrow_types={
+            "Effect": "directed",
+            "Covariance": "bidirected",
+            "Undirected": "undirected",
+        },
         arrow_color="#000000",
+        arrow_color_on_hover="#90E4C1",
+        arrow_width=3,
         allowed_connections: Callable = disallow_self_and_existing,
         **kwargs,
     ) -> None:
         """Initialize a new EdnoCanvas.
 
         Args:
-            root (ctk.CTk): The ctk.CTk root object to which the EdnoCanvas should be added.
-            form_names (_type_, optional): Specifies what the rectangles and ellipse are called on the canvas. For example, {"rectangle": "manifest", "ellipse": "latent"} specifies that the rectangles will be called manifest variables and the ellipse will be called latent variables. Defaults to {"rectangle": "rectangle", "ellipse": "ellipse"}.
+            root (ttk.Window): The ttk.Window root object to which the EdnoCanvas should be added.
+            node_classes (dict[str, Callable], optional): A dictionary of node classes that can be added to the canvas. Defaults to {"Ellipse": EllipseNode, "Rectangle": PolyNode_factory(4), "Triangle": PolyNode_factory(3)}. The keys specify the names of the nodes on the canvas. For example, in Structural Equation Models, latent and observed variables could be represented by ellipses and rectangles, respectively ({"Latent": EllipseNode, "Observed": PolyNode_factory(4)}). New node types can be created using the PolyNode_factory function. Alternatively, nodes can be created by inheriting from PolyNode and adapting its methods.
             font (tuple, optional). Font used on the canvas. Defaults to ("Arial", 9).
             font_color (str, optional): Color of the text. Defaults to "#000000".
             node_color (_type_, optional): Color of nodes. Expects a dict with three keys: "default", "allowed", "not allowed". A default color for nodes, a color for allowed connections, and a color for disallowed connections. Defaults to { "default": "#ADD8E6", "allowed": "#90E4C1", "not allowed": "#ffcccb", }.
+            arrow_types (dict[str, str], optional): The types of arrows that can be drawn. Defaults to {"Effect": "directed", "Covariance": "bidirected", "Undirected": "undirected"}. The keys specify the names of the arrows on the canvas. The values specify the type of the arrow. The arrow type can be one of "directed", "bidirected", or "undirected".
             arrow_color (str, optional): Color of all arrows. Defaults to "#000000".
-            allowed_connections (Callable, optional): Callable  with signature (predictors_node, dependents_node, all_nodes) -> bool. This function will be called each time a user tries to connect two nodes. If the function returns True, the connection will be allowed, otherwise not. If the user hovers over a node, the color of the node will change to the allowed color if the connection is allowed, otherwise to the not allowed color. Defaults to disallow_self_and_existing.
+            arrow_color_on_hover (str, optional): Color of arrows when hovering over the arrow with the mouse. Defaults to "#90E4C1".
+            arrow_width (int, optional): Width of the arrows. Defaults to 3.
+            allowed_connections (Callable, optional): Callable  with signature (predictors_node, dependents_node, all_nodes, arrow_type) -> bool. This function will be called each time a user tries to connect two nodes. If the function returns True, the connection will be allowed, otherwise not. If the user hovers over a node, the color of the node will change to the allowed color if the connection is allowed, otherwise to the not allowed color. Defaults to disallow_self_and_existing.
+            kwargs: Additional keyword arguments to pass to the tk.Canvas constructor.
         """
         super().__init__(root, kwargs)
 
-        self.form_names = form_names
+        self.node_classes = node_classes
         self.node_color = node_color
         self.font_color = font_color
+        self.arrow_types = arrow_types
         self.arrow_color = arrow_color
+        self.arrow_color_on_hover = arrow_color_on_hover
+        self.arrow_width = arrow_width
         self.allowed_connections = allowed_connections
 
         # initialize nodes
-        self.nodes: list[Node] = []
+        self.nodes: list[PolyNode] = []
         self.arrows: list[Arrow] = []
         # the following variables are used to indicate if we are currently
         # in an arrow drawing mode. This ensures that we are not allowing
@@ -113,7 +140,7 @@ class EdnoCanvas(tk.Canvas):
         # context menu. This makes sure that, at any point, only one
         # menu is open
         self.context_menu = None
-        self.canvas_context_menu = CanvasContextMenu(root, self, self.form_names)
+        self.canvas_context_menu = CanvasContextMenu(root, self, self.node_classes)
 
         # add scrolling
         # We want to ensure that only model elements (e.g., nodes)
@@ -188,10 +215,8 @@ class EdnoCanvas(tk.Canvas):
         # The boxes around the text field often do not update correctly, so
         # we need to update them manually
         for node in self.nodes:
-            node.update_box()
+            node.update_shape()
         # the arrow heads also need to be updated
-        for arrow in self.arrows:
-            arrow.arrow_head.update()
         for arrow in self.arrows:
             arrow.update_box()
 
@@ -235,6 +260,7 @@ class EdnoCanvas(tk.Canvas):
             # getting the labels of the predictors and dependents is a bit complicated, as each node
             # only knows about the arrows, but not the predicting / predicted nodes themselves. So,
             # we need to first find the arrows and then get the labels of the nodes these arrows come from / go to.
+            type = node.type
             incoming_arrows_id = [arrow for arrow in node.predictors_arrow_id]
             outgoing_arrows_id = [arrow for arrow in node.dependents_arrow_id]
             # given the ids, we can find the actual arrows
@@ -258,10 +284,35 @@ class EdnoCanvas(tk.Canvas):
                 nd.get_label() for nd in self.nodes if nd.node_id in predictors_ids
             ]
             node_connections[node.get_label()] = {
-                "depdentents": dependents,
+                "type": type,
+                "dependents": dependents,
                 "predictors": predictors,
             }
         return node_connections
+
+    def get_node_with_id(self, node_id: int) -> PolyNode:
+        """
+        Get the node with the specified id.
+
+        Args:
+            node_id (int): The id of the node to get.
+
+        Returns:
+            PolyNode: The node with the specified id.
+        """
+        return [node for node in self.nodes if node.node_id == node_id][0]
+
+    def get_node_with_label(self, label: str) -> PolyNode:
+        """
+        Get the node with the specified label.
+
+        Args:
+            label (str): The label of the node to get.
+
+        Returns:
+            PolyNode: The node with the specified label.
+        """
+        return [node for node in self.nodes if node.get_label() == label][0]
 
     def reset(self) -> None:
         """
@@ -283,70 +334,52 @@ class CanvasContextMenu:
 
     def __init__(
         self,
-        root: ctk.CTk,
+        root: ttk.Window,
         canvas: "EdnoCanvas",
-        form_names: dict[str, str] = {"rectangle": "rectangle", "ellipse": "ellipse"},
+        node_classes: dict[str, Callable],
     ) -> None:
         """
         Initializes a new instance of the CanvasContextMenu class.
 
         Args:
-            root (ctk.CTk): The root window of the GUI.
+            root (ttk.Window): The root window of the GUI.
             canvas (EdnoCanvas): The canvas object associated with the context menu.
-            form_names: dict[str, str]
-                Specifies what the rectangles and ellipse are called on the canvas. For example,
-                {"rectangle": "manifest", "ellipse": "latent"} specifies that the rectangles will be called manifest variables and the ellipse will be called latent variables.
+            node_classes: dict[str, Callable]: A dictionary of node classes that can be added to the canvas.
         """
         self.canvas = canvas
-        self.form_names = form_names
+        self.node_classes = node_classes
         self.canvas_context_menu = tk.Menu(root, tearoff=0)
-        self.canvas_context_menu.add_command(
-            label=f"Add {self.form_names['ellipse']}", command=self.create_ellipse
-        )
-        self.canvas_context_menu.add_command(
-            label=f"Add {self.form_names['rectangle']}", command=self.create_rectangle
-        )
+        for key, node_class in self.node_classes.items():
+            self.canvas_context_menu.add_command(
+                label=f"Add {key}",
+                command=lambda node_class=node_class, key=key: self.create_node(
+                    node_class, type=key
+                ),
+            )
 
         self.canvas.bind("<Button-3>", self.show_right_click_menu)
         self.canvas.bind("<Button-1>", self.release_right_click_menu)
 
-    def create_ellipse(self) -> None:
+    def create_node(self, node_class: Callable, type: str) -> None:
         """
-        Creates a new ellipse node on the canvas at the position of the context menu.
-        """
-        self.canvas.nodes.append(
-            Node(
-                self.canvas,
-                label="",
-                x=self.canvas.context_menu.position[0],
-                y=self.canvas.context_menu.position[1],
-                type=self.form_names["ellipse"],
-                allowed_connections=self.canvas.allowed_connections,
-                shape="ellipse",
-                font=self.canvas.font,
-                font_color=self.canvas.font_color,
-                node_color=self.canvas.node_color,
-                arrow_color=self.canvas.arrow_color,
-            )
-        )
-        self.canvas.context_menu = None
+        Creates a new node on the canvas at the position of the context menu.
 
-    def create_rectangle(self) -> None:
-        """
-        Creates a new rectangle node on the canvas at the position of the context menu.
+        Args:
+            node_class (Callable): The class of the node
+            type (str): The type of the node
         """
         self.canvas.nodes.append(
-            Node(
+            node_class(
                 self.canvas,
                 label="",
                 x=self.canvas.context_menu.position[0],
                 y=self.canvas.context_menu.position[1],
-                type=self.form_names["rectangle"],
+                type=type,
                 allowed_connections=self.canvas.allowed_connections,
-                shape="rectangle",
                 font=self.canvas.font,
                 font_color=self.canvas.font_color,
                 node_color=self.canvas.node_color,
+                arrow_types=self.canvas.arrow_types,
                 arrow_color=self.canvas.arrow_color,
             )
         )
@@ -365,7 +398,7 @@ class CanvasContextMenu:
             return
         # https://www.geeksforgeeks.org/right-click-menu-using-tkinter/
         try:
-            self.canvas.context_menu.tk_popup(event.x_root, event.y_root, 0)
+            self.canvas.context_menu.tk_popup(event.x_root + 1, event.y_root + 1, 0)
         finally:
             self.canvas.context_menu.grab_release()
             # save position on canvas to add nodes at that position

@@ -1,14 +1,17 @@
 from edno.EdnoCanvas import EdnoCanvas
-from edno.nodes import Node, create_label, check_label
-from edno.arrow import Arrow
-from edno.text_box import TextBox, distance
+from edno.PolyNode import PolyNode, PolyNode_factory, create_label, check_label
+from edno.EllipseNode import EllipseNode
+from edno.Arrow import Arrow
+from edno.TextBox import TextBox
 
 __all__ = [
     "EdnoCanvas",
-    "Node",
+    "PolyNode",
+    "PolyNode_factory",
     "create_label",
     "check_label",
+    "EllipseNode",
     "Arrow",
     "TextBox",
-    "distance"
+    "distance",
 ]

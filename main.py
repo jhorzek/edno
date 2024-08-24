@@ -5,7 +5,7 @@ import edno
 
 if __name__ == "__main__":
 
-    root = ttk.Window(themename="solar")
+    root = ttk.Window()
     root.geometry("1000x850")
     # initialize a grid with two columns and one row
     root.grid_columnconfigure(0, weight=1)

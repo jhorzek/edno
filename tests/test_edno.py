@@ -1,6 +1,7 @@
 import unittest
 import os
-import customtkinter as ctk
+import tkinter as tk
+import ttkbootstrap as ttk
 import edno
 
 
@@ -15,7 +16,7 @@ class TestGUI(unittest.TestCase):
         if os.name != "nt" and os.getenv("GITHUB_ACTIONS"):
             os.system("Xvfb :1 -screen 0 1600x1200x16  &")
             os.environ["DISPLAY"] = ":1.0"
-        self.root = ctk.CTk()
+        self.root = tk.Tk()
         self.app = edno.EdnoCanvas(self.root)
 
     def test_nodes(self):
@@ -210,7 +211,7 @@ class TestTextBox(unittest.TestCase):
         if os.name != "nt" and os.getenv("GITHUB_ACTIONS"):
             os.system("Xvfb :1 -screen 0 1600x1200x16  &")
             os.environ["DISPLAY"] = ":1.0"
-        root = ctk.CTk()
+        root = tk.Tk()
         app = edno.EdnoCanvas(root)
         text_box = edno.TextBox(app, x=1, y=10, label="my_text")
         self.assertEqual(text_box.label, "my_text")

@@ -44,8 +44,8 @@ def get_polygon_points(
             y + 0.5 * height,
         ]
 
-    if sides % 2 == 1:
-        angle = 90
+    if sides > 3:
+        angle = 90.0001
     else:
         angle = 0.0001
     # the algorithm uses one element more than there are sides
